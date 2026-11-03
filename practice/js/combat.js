@@ -71,6 +71,7 @@ export function createCombat(opts) {
   const stats = WL.computeStats(build, raceKey, cfg);
   const table = WL.buildSpellTable(build, stats, cfg);
   const SPELLS = WL.spellsFor(cfg);
+  const MANUAL_AMP = WL.manualAmplify(build);
   const race = WL.RACES[raceKey], cb = cfg.combat, isSB = WL.isShadowBolt;
   const emit = opts.onEvent || function () {};
   const check = !!opts.linearDuration, timed = !check && !!opts.timedDuration;
@@ -646,9 +647,9 @@ export function createCombat(opts) {
     // Amplify Curse is used by itself with Bane of Agony whenever it is ready (as the engine does): that Bane's whole tick
     // value, after everything else, times 1.5 (sim 2a33649; it was the base value only).
     // As a button (AMP_BTN) it is used up by the Bane of Agony cast while it is up.
-    if (key === 'baneOfAgony' && tv('amplifyCurse') && (AMP_BTN ? buff('amplifyCurse') : ready('amplifyCurse'))) {
+    if (key === 'baneOfAgony' && tv('amplifyCurse') && ((AMP_BTN || MANUAL_AMP) ? buff('amplifyCurse') : ready('amplifyCurse'))) {
       castMult = 1 + tv('amplifyCurse', 'boaPct') / 100;
-      if (AMP_BTN) delete S.buffs.amplifyCurse;
+      if (AMP_BTN || MANUAL_AMP) delete S.buffs.amplifyCurse;
       else { S.cds.amplifyCurse = S.t + AMP_CD; emit({ type: 'used', name: 'Amplify Curse' }); }
     }
     const free = key === 'soulFire' && (startedWithDecimation || buff('decimation'));
@@ -826,7 +827,7 @@ export function createCombat(opts) {
     return { ok: false, reason: reason };
   }
 
-  function needsTarget(key) { return key !== 'lifeTap' && !(SPELLS[key].aoe && !SPELLS[key].range); }
+  function needsTarget(key) { return key !== 'lifeTap' && key !== 'amplifyCurse' && !(SPELLS[key].aoe && !SPELLS[key].range); }
 
   // Why this spell cannot be cast right now (null = it can), at your current target.
   function blocked(key, ctx) {
@@ -1155,7 +1156,7 @@ export function createCombat(opts) {
     const open = list.indexOf('bane') < 0 || leftOn(boss, 'baneOfDoom') > 0 || leftOn(boss, 'baneOfAgony') > 0;
     found.racial = !!racialOf('cooldown') && view.ready('racial') && SPELLS[found.key].kind !== 'utility' && open;
     // Amplify Curse as a button: press it before the Bane of Agony (the sim uses it on every one while it is ready).
-    found.amplify = AMP_BTN && found.key === 'baneOfAgony' && !!tv('amplifyCurse') && view.ready('amplifyCurse') && !view.buff('amplifyCurse');
+    found.amplify = AMP_BTN && !MANUAL_AMP && found.key === 'baneOfAgony' && !!tv('amplifyCurse') && view.ready('amplifyCurse') && !view.buff('amplifyCurse');
     return found;
   }
 
@@ -1209,6 +1210,7 @@ export function createCombat(opts) {
 
 // Which spells of a build's priority list go on the action bar (the keys of this table are the priority actions).
 export const ACTION_SPELLS = {
+  amplifyCurse: ['amplifyCurse'],
   deathCoilFinisher: ['deathCoil'], deathCoil: ['deathCoil'],
   bane: ['baneOfDoom', 'baneOfAgony'], baneOfAgony: ['baneOfAgony'],
   curseOfElements: ['curseOfElements'],
@@ -1231,7 +1233,7 @@ export function bookSpells(build, table, race, names) {
   function place(k) { return HOME[k] ? HOME[k][0] : 99; }
   keys.sort(function (a, b) { return place(a) - place(b) || String(names(a)).localeCompare(String(names(b))); });
   if (race.racials.some(function (r) { return r.effect === 'cooldown'; })) keys.push('racial');
-  if (build.talents && build.talents.amplifyCurse) keys.push('amplifyCurse');
+  if (build.talents && build.talents.amplifyCurse && keys.indexOf('amplifyCurse') < 0) keys.push('amplifyCurse');
   return keys;
 }
 

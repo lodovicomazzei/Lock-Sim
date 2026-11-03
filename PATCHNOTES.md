@@ -4,6 +4,8 @@ What each version added or changed, newest first. Version = the version of the
 [live page](https://claude.ai/artifact/WzHGwM25MtG9kXFG8rcW9W).
 
 ## v159
+- Amplify Curse can be selected in the simple priority and Advanced (APL), with its own conditions. Explicit entries control its use; builds without one keep the previous automatic use with Bane of Agony.
+- The build editor's **Open in 3D** button transfers the complete build and current settings directly into the bundled practice room.
 - **Wrack follows Blizzard's November 2 tuning:** 86 base Shadow damage per second at level 60 (was 36), a 0.286
   spell-power coefficient per second (was 0.143), and no damage bonus from Improved Drains.
 

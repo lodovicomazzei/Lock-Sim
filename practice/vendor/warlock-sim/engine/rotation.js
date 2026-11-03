@@ -37,6 +37,10 @@ WL.minDotLeft = function (S) {
 
 WL.CONFLAG_EXPIRE_S = 3;   // "about to expire" for conflagrateExpire: one Immolate tick interval
 WL.ACTIONS = {
+  amplifyCurse: {
+    label: 'Amplify Curse when ready (off the global cooldown)',
+    pick: function (S) { return S.has('amplifyCurse') && S.ready('amplifyCurse') ? 'amplifyCurse' : null; },
+  },
   // Keep Curse of the Elements on the boss. [A34]
   curseOfElements: {
     label: 'Curse of the Elements if missing',
@@ -334,6 +338,7 @@ WL.ACTIONS = {
 WL.RULE_SPELLS = Object.keys(WL.SPELLS).filter(function (k) { return k !== 'drainSoul' && k !== 'baneOfHavoc'; });
 WL.RULE_DOTS = ['corruption', 'immolate', 'siphonLife', 'baneOfAgony', 'baneOfDoom'];
 WL.RULE_AURAS = [['shadowTrance', 'Shadow Trance (Nightfall)'], ['decimation', 'Decimation'], ['isb', 'Improved Shadow Bolt on the boss'],
+  ['amplifyCurse', 'Amplify Curse'],
   ['coe', 'Curse of the Elements on the boss'], ['brand', 'Demonic Brand on the boss'], ['snfFire', 'Shadow and Flame (Fire)'], ['snfShadow', 'Shadow and Flame (Shadow)'],
   ['bloodFury', 'Blood Fury'], ['berserking', 'Berserking'], ['eureka', 'Eureka!'], ['powerInfusion', 'Power Infusion'], ['spPotion', 'Spellblasting potion']];
 WL.RULE_OPS = ['<', '<=', '>', '>=', '='];
@@ -391,7 +396,7 @@ WL.actionOf = function (key, build) {
   }
   var m = /^rule:(\d+)$/.exec(key || ''), r = m && build && build.rules && build.rules[+m[1]];
   if (!r || WL.RULE_SPELLS.indexOf(r.spell) < 0) return null;
-  return { rule: r, label: WL.ruleText(r, build), filler: !r.when, deep: WL.condDeep(r.when, build), pick: function (S) {
+  return { rule: r, label: WL.ruleText(r, build), filler: !r.when && !WL.SPELLS[r.spell].offGcd, deep: WL.condDeep(r.when, build), pick: function (S) {
     if (!S.has(r.spell) || !S.ready(r.spell)) return null;
     return WL.ruleCond(r.when, S, build) ? r.spell : null;
   } };
@@ -489,6 +494,7 @@ function aplFight(w, op, v) { return { t: 'fight', what: w, op: op, v: v }; }
 var APL_NO_BANE = [aplDot('baneOfDoom', '<=', 0), aplDot('baneOfAgony', '<=', 0)];
 var APL_AGONY = { spell: 'baneOfAgony', when: aplAll(APL_NO_BANE[0], APL_NO_BANE[1], { t: 'paysOff', spell: 'baneOfAgony' }) };
 WL.APL_TEMPLATES = {
+  amplifyCurse: [{ spell: 'amplifyCurse' }],
   curseOfElements: [{ spell: 'curseOfElements', when: aplAll({ t: 'setting', key: 'coe' }, aplAura('coe', '<=', 0), aplFight('remaining', '>', 10)) }],
   shadowTrance: [{ spell: 'shadowBolt', when: aplAura('shadowTrance', '>', 0) }],
   bane: [{ spell: 'baneOfDoom', when: aplAll(APL_NO_BANE[0], APL_NO_BANE[1], aplFight('remaining', '>=', 60)) }, APL_AGONY],

@@ -58,6 +58,7 @@ foreach ($f in 'spells.js', 'races.js', 'config.js') { foreach ($m in [regex]::M
 # Spells whose tooltip changed after the archive was taken (2026-09-23). Text copied from the live Wowhead Forever
 # spell page; the reason is in docs/01_SOURCES.md (S12) and docs/03_BUILD_LOG.md.
 $override = @{
+  '18288' = 'Increases the effect of your next Curse of Weakness or Bane of Agony by 50%, or your next Curse of Exhaustion by 20%. Lasts 30 sec.'
   # Patch 2026-10-16: live Wowhead Forever tooltips of 2026-10-16 (Eureka! until then: 'Your next 3 damaging abilities have
   # their Mana cost reduced by 10% and deal 10% more damage.', beta build 2026-09-24). Its 8 s are not in the text.
   '1259821' = 'Your non-periodic damaging abilities have their Mana cost reduced by 10% and deal 10% more damage.'   # Eureka!

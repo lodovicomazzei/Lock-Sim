@@ -55,6 +55,7 @@ WL.TALENT_TEXT = {
   demonicPact: ["Your Demonic Sacrifice effect is no longer cancelled by summoning a different Demon pet. Resummoning the sacrificed pet will still cancel the effect."],
 };
 WL.SPELL_TEXT = {
+  18288: "Increases the effect of your next Curse of Weakness or Bane of Agony by 50%, or your next Curse of Exhaustion by 20%. Lasts 30 sec.",
   11661: "Sends a shadowy bolt at the enemy, causing 237 to 265 Shadow damage (+85.7% of Spell Power).",
   11668: "Burns the enemy for 146 Fire damage (+20% of Spell Power) and then an additional 260 Fire damage (+65% of Spell Power) over 15 sec.",
   1293813: "Deals (71.4% of Spell Power) Fire damage to your target and an additional 25% damage if the target is afflicted by Immolate.",

@@ -309,6 +309,7 @@ tooltip says 246 to 274). A spell's "family" decides which talents count it as a
 | Wrack | Shadow | Affliction | 6 ticks of 86 + 0.286 × SP, one every 1 s | channel, 6 s | 200 | — | 30 yd |
 | Death Coil | Shadow | Affliction | 454 + 0.214 × SP | instant | 600 | 120 s | 30 yd |
 | Curse of the Elements | Shadow | Affliction | — | instant | 200 | — | 30 yd |
+| Amplify Curse | Shadow | Affliction | — | instant | 0 | 180 s | self |
 | Life Tap | Shadow | Affliction | — | instant | 430 health | — | self |
 
 **Destruction spells** (Ruin, Agonizing Flames, Cataclysm, Intensity): Shadow Bolt, Immolate, Incinerate, Searing Pain, Conflagrate, Shadowburn, Soul Fire, Hellfire, Rain of Fire.
@@ -333,6 +334,7 @@ tooltip says 246 to 274). A spell's "family" decides which talents count it as a
 - **Wrack.** Channel. While it runs, the ticks of your Corruption, Bane of Agony, Siphon Life and Bane of Doom deal 10% more. It counts as a drain for Soul Siphon, Fel Concentration and Nightfall, but no longer for Improved Drains.
 - **Death Coil.** Heals you for the damage it deals. Projectile.
 - **Curse of the Elements.** Has to hit. On the target for 5 minutes: it takes 10% more damage from your spells, your demon's spells and your explosives, and its resistance drops by 75 (which removes the level resistance).
+- **Amplify Curse.** Off the global cooldown. The next Bane of Agony cast within 30 s deals 50% more damage on every tick. An explicit priority/APL or fight-timeline entry controls when it is used; without one it is automatic with Bane of Agony.
 - **Life Tap.** Instant, one global cooldown: 430 health become (430 + Spirit) mana, more with Improved Life Tap. It does not restart the 5-second rule.
 <!-- /gen:spells -->
 
@@ -372,7 +374,7 @@ Every talent of the three trees. "Talent group" and "aura" are explained in sect
 | Improved Drains | 3 | drain damage +7 / 13 / 20% | Adds to the periodic talent group of Drain Life and Drain Soul. It no longer raises Wrack; its new Drain Mana effect is not simulated. |
 | Improved Bane of Agony | 2 | Bane of Agony damage +5 / 10% | Adds to Bane of Agony's periodic talent group. |
 | Fel Concentration | 3 | pushback ignored 23 / 47 / 70% | Only matters when "Take a hit every (s)" is set: chance to ignore the pushback on Drain Life, Drain Soul and Wrack. |
-| Amplify Curse | 1 | Bane of Agony +50% | Used with every Bane of Agony cast while its 3-minute cooldown is ready (off the global cooldown). Every tick of that Bane of Agony is multiplied by 1.5 after everything else (talents, auras, curse, crit). Never used on Bane of Doom. |
+| Amplify Curse | 1 | Bane of Agony +50% | Off the global cooldown, with a 3-minute cooldown. An explicit priority/APL or fight-timeline entry controls it; without one, it is automatic with Bane of Agony. Every tick of the next Bane of Agony cast within 30 s is multiplied by 1.5 after everything else. Never used on Bane of Doom. |
 | Pandemic | 3 | crit bonus +33 / 67 / 100% | Crits of Corruption, Bane of Agony, Bane of Doom, Drain Soul, Drain Life, Siphon Life and Wrack deal ×1.665 / ×1.835 / ×2.0 instead of ×1.5. |
 | Malevolence | 5 | Shadow crit +1 / 2 / 3 / 4 / 5% | Adds to the crit chance of every Shadow spell of yours. Not added when "Sheet crit % already includes talents, racials & oil" is ticked. |
 | Nightfall | 2 | chance per tick 2 / 4% | Every tick of Corruption, Drain Soul, Drain Life and Wrack has this chance to give Shadow Trance for 10 s: your next Shadow Bolt has no cast time (it still costs its mana and a global cooldown). |
@@ -755,6 +757,7 @@ The last entry is a filler that is always possible.
 <!-- gen:actions -->
 | Priority action | It casts when |
 |---|---|
+| Amplify Curse when ready (off the global cooldown) | Use Amplify Curse when its cooldown is ready, subject to this entry's extra conditions. Adding it to the priority/APL switches off its automatic use with Bane of Agony. |
 | Curse of the Elements if missing | The option "Keep Curse of the Elements up" is on, the curse is not on the boss and more than 10 s of the fight are left. |
 | Shadow Bolt (max rank) if Shadow Trance (Nightfall) is up | Shadow Trance (Nightfall) is up: an instant Shadow Bolt. |
 | Bane of Doom if ≥60 s left and ready, else Bane of Agony if no Bane (while it still pays off) | No Bane of yours is on the boss. Bane of Doom if it is off cooldown and at least 60 s are left; otherwise Bane of Agony, near the end only while it still pays off. |

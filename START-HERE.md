@@ -37,6 +37,10 @@ If you already have a repository, clone it with GitHub Desktop and copy the pack
 
 ## Test after publishing
 
+To play a custom build, open it in the main simulator's Build editor and click **Open in 3D**. This transfers its talents, pet, rotation and current character/fight settings automatically. Alternatively, click **Copy build code**, then use **Import → Build code → Apply** in 3D. The `WFB1:` prefix is generated for you; do not type it by hand. Saving a build alone does not transfer it between the two pages.
+
+Amplify Curse is selectable in the simple priority and Advanced (APL). If you add it, that entry's conditions control when it is used. If you leave it out, the previous automatic use with Bane of Agony continues.
+
 1. Open the main address and check that the build ranking appears. Run **Sim!** and open **Wrack Succubus** to inspect its spell details. Wrack's base tick formula should be `86 + 0.286 × Shadow spell power` before modifiers.
 2. Click **Forever Warlocking**. The 3D room, character and spell bar should appear. Choose a build and cast on a dummy.
 3. Use the practice room's **Warlock SIM → Open** button to return to your simulator.

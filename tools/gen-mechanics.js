@@ -31,7 +31,7 @@ const TALENT_NOTES = {
   improvedDrains: 'Adds to the periodic talent group of Drain Life and Drain Soul. It no longer raises Wrack; its new Drain Mana effect is not simulated.',
   improvedBaneOfAgony: 'Adds to Bane of Agony\'s periodic talent group.',
   felConcentration: 'Only matters when "Take a hit every (s)" is set: chance to ignore the pushback on Drain Life, Drain Soul and Wrack.',
-  amplifyCurse: 'Used with every Bane of Agony cast while its 3-minute cooldown is ready (off the global cooldown). Every tick of that Bane of Agony is multiplied by 1.5 after everything else (talents, auras, curse, crit). Never used on Bane of Doom.',
+  amplifyCurse: 'Off the global cooldown, with a 3-minute cooldown. An explicit priority/APL or fight-timeline entry controls it; without one, it is automatic with Bane of Agony. Every tick of the next Bane of Agony cast within 30 s is multiplied by 1.5 after everything else. Never used on Bane of Doom.',
   pandemic: 'Crits of Corruption, Bane of Agony, Bane of Doom, Drain Soul, Drain Life, Siphon Life and Wrack deal ×1.665 / ×1.835 / ×2.0 instead of ×1.5.',
   malevolence: 'Adds to the crit chance of every Shadow spell of yours. Not added when "Sheet crit % already includes talents, racials & oil" is ticked.',
   nightfall: 'Every tick of Corruption, Drain Soul, Drain Life and Wrack has this chance to give Shadow Trance for 10 s: your next Shadow Bolt has no cast time (it still costs its mana and a global cooldown).',
@@ -101,6 +101,7 @@ const VALUE_LABELS = {
 
 // ---------- notes: how each spell behaves in the sim ----------
 const SPELL_NOTES = {
+  amplifyCurse: 'Off the global cooldown. The next Bane of Agony cast within 30 s deals 50% more damage on every tick. An explicit priority/APL or fight-timeline entry controls when it is used; without one it is automatic with Bane of Agony.',
   shadowBolt: 'A crit applies Improved Shadow Bolt (with the talent). No cast time under Shadow Trance. A hit while the boss is below 35% health triggers Decimation (with the talent). Projectile.',
   immolate: 'A direct hit plus a 15 s burn. Aftermath only raises the hit. Conflagrate needs it on the target, and Incinerate deals 25% more while it is there.',
   incinerate: '25% more damage if your Immolate is on the target when it lands. Projectile.',
@@ -125,6 +126,7 @@ const SPELL_NOTES = {
 
 // ---------- notes: when each priority action casts ----------
 const ACTION_NOTES = {
+  amplifyCurse: 'Use Amplify Curse when its cooldown is ready, subject to this entry\'s extra conditions. Adding it to the priority/APL switches off its automatic use with Bane of Agony.',
   curseOfElements: 'The option "Keep Curse of the Elements up" is on, the curse is not on the boss and more than 10 s of the fight are left.',
   shadowTrance: 'Shadow Trance (Nightfall) is up: an instant Shadow Bolt.',
   bane: 'No Bane of yours is on the boss. Bane of Doom if it is off cooldown and at least 60 s are left; otherwise Bane of Agony, near the end only while it still pays off.',

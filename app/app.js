@@ -44,7 +44,7 @@
   }
   // icon(key, title, cls, tipHtml): with tipHtml the icon gets a rich hover tooltip instead of the plain title.
   function icon(key, title, cls, tip) {
-    var src = WL.ICONS[key];
+    var src = WL.ICONS[key] || WL.ICONS['talent_' + key];
     if (!src) return '';
     return '<img class="ico' + (cls ? ' ' + cls : '') + '" src="' + src + '" alt="' + esc(title) + '"' +
       (tip ? ' data-tip="' + esc(tip) + '"' : ' title="' + esc(title) + '"') + '>';
@@ -2499,7 +2499,7 @@
   function aplWhenText(w, b) { return w.t === 'all' ? (w.c || []).map(function (x) { return WL.condText(x, b); }).join(' and ') : WL.condText(w, b); }
   function aplLineHtml(l, b) {
     return '<span class="aplcast">' + icon(l.spell, spellName(l.spell)) + ' <b>' + esc(spellName(l.spell)) + '</b></span>' +
-      (l.when ? ' <span class="aplif"><i>if</i> ' + esc(aplWhenText(l.when, b)) + '</span>' : ' <span class="meta">— the filler: whenever nothing above can be cast</span>');
+      (l.when ? ' <span class="aplif"><i>if</i> ' + esc(aplWhenText(l.when, b)) + '</span>' : WL.SPELLS[l.spell].offGcd ? ' <span class="meta">— when ready, off the global cooldown</span>' : ' <span class="meta">— the filler: whenever nothing above can be cast</span>');
   }
   function aplEntryLines(a, b, i) {                       // i = its place in the priority; null inside a group (edit the group)
     var L = WL.aplLines(a, b), m = /^rule:(\d+)$/.exec(a);
@@ -2991,6 +2991,21 @@
       var rk = x.getAttribute('data-edheldremove'); heldCustoms = heldCustoms.filter(function (h) { return h.key !== rk; });
       if (ed.held === rk) ed.held = null;
       saveCustoms(); renderEditor(); edMsg('Removed.'); return true;
+    }
+    if (t.closest('#edPractice')) {
+      var problems = WL.validateBuild(b);
+      if (problems.length) { edMsg('Check the build before opening it in 3D: ' + problems[0], true); return true; }
+      readSettings();
+      var p = new URLSearchParams();
+      p.set('v', '1'); p.set('bc', WL.encodeBuild(b)); p.set('sc', WL.encodeSettings(cfg));
+      p.set('race', WL.RACE_KEYS.indexOf($('t_race').value) >= 0 ? $('t_race').value : WL.RACE_KEYS[0]);
+      p.set('fight', 't' + cfg.fight.duration); p.set('dummies', cfg.fight.targets || 1);
+      p.set('latency', cfg.fight.latencyMs || 0);
+      if (cfg.fight.moveEvery > 0 && cfg.fight.moveDuration > 0) p.set('move', cfg.fight.moveEvery + '-' + cfg.fight.moveDuration);
+      if (cfg.fight.hitEvery > 0) p.set('hit', cfg.fight.hitEvery);
+      window.open('practice/#' + p.toString(), '_blank', 'noopener');
+      edMsg('Opened this build in 3D with your current character and fight settings.');
+      return true;
     }
     if (t.closest('#edCopy')) {
       $('edCode').value = WL.encodeBuild(b);

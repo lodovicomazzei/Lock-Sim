@@ -1,5 +1,7 @@
 # Patch notes — Forever Warlocking
 
+Build-transfer update: use **Open in 3D** in the main simulator's build editor to load a saved or newly edited build directly. Explicit Amplify Curse APL entries are supported by the shared engine and practice action bar.
+
 Combined-copy update (2026-11-03): synchronized the shared simulator with the bundled Wrack update (86 base damage per second, 0.286 spell-power coefficient, and no Improved Drains bonus). The SIM Open button returns to the bundled main simulator. The original version history follows.
 
 What changed, newest first. The [page](https://xnwlk.github.io/ForeverWarlocking/) always runs the newest version;

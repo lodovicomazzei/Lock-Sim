@@ -74,6 +74,8 @@ WL.SPELLS = {
                   base: 454, coef: 0.214, cast: 0, cost: 600, range: 30, cd: 120, projectile: true, leech: 1 },
   curseOfElements: { id: 1311680, name: 'Curse of the Elements', school: 'shadow', tree: 'affliction', kind: 'utility',
                   cast: 0, cost: 200, range: 30, duration: 300, dmgTakenPct: 10 },            // [A34]
+  amplifyCurse: { id: 18288, name: 'Amplify Curse', school: 'shadow', tree: 'affliction', kind: 'utility',
+                  cast: 0, cost: 0, range: 0, duration: 30, cd: 180, offGcd: true, talent: 'amplifyCurse' },
   lifeTap:      { id: 11689,   name: 'Life Tap',       school: 'shadow', tree: 'affliction',  kind: 'utility',
                   cast: 0, cost: 0, range: 0, manaBase: 430, healthCost: 430 },   // round 119: "Converts 430 health into …"                                  // [A12] mana = (430 + Spirit) * (1 + ImpLT)
 };

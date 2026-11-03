@@ -140,6 +140,10 @@ window.WL = window.WL || {};
     var s = SPELLS[bk], e = table[bk];
     if (!s || !e) return null;
     if (s.kind === 'utility') {
+      if (bk === 'amplifyCurse') {
+        notes.push('Off the global cooldown, with a 180 s cooldown. The next Bane of Agony cast within 30 s gains 50% damage on every tick. An explicit priority/APL or fight-timeline entry controls its use; otherwise it is automatic with Bane of Agony.');
+        return { title: s.name, steps: steps, notes: notes, values: values };
+      }
       if (bk === 'curseOfElements') notes.push('No damage of its own. On the target for ' + f(s.duration / 60, 0) + ' minutes: it takes ' + s.dmgTakenPct + '% more damage from your spells, your demon\'s spells and explosives, and its resistance drops by ' + cb.coeResistReduction + '. It has to hit (' + f(100 - stats.hitPct) + '% miss).');
       else return null;
       return { title: s.name, steps: steps, notes: notes, values: values };

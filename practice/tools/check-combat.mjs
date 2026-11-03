@@ -40,6 +40,14 @@ const SCENES = [
 ];
 const ctx = { moving: false, petDistance: 0 };
 let fights = 0, failures = 0;
+const manualAmp = JSON.parse(JSON.stringify(WL.BUILDS.find(b => b.key === 'wrack_succubus')));
+manualAmp.key = 'check_manual_amplify'; manualAmp.rotation.unshift('amplifyCurse');
+manualAmp.actWhen = Object.assign({}, manualAmp.actWhen, { amplifyCurse: { t: 'fight', what: 'elapsed', op: '>=', v: 15 } });
+const groupedAmp = JSON.parse(JSON.stringify(manualAmp));
+groupedAmp.key = 'check_grouped_amplify'; delete groupedAmp.actWhen.amplifyCurse;
+groupedAmp.rules = [{ spell: 'amplifyCurse', when: { t: 'fight', what: 'elapsed', op: '>=', v: 10 } }];
+groupedAmp.groups = { cooldowns: ['rule:0'] }; groupedAmp.rotation[0] = 'group:cooldowns';
+const checkedBuilds = WL.BUILDS.concat([manualAmp, groupedAmp]);
 
 function withFiller(build, filler) {
   if (!filler) return build;
@@ -49,7 +57,7 @@ function withFiller(build, filler) {
 }
 
 for (const scene of SCENES) {
-  for (const ready of WL.BUILDS) {
+  for (const ready of checkedBuilds) {
     const build = withFiller(ready, scene.filler);
     for (const raceKey of WL.RACE_KEYS) {
       for (const seed of scene.seeds) {

@@ -59,7 +59,7 @@ WL.validateBuild = function (b) {
   if (fi < 0 && rot.length) errs.push('The priority list needs a filler (Shadow Bolt, Searing Pain, Incinerate, … or a rule without a condition) at the end');
   else if (fi >= 0 && fi < rot.length - 1) errs.push('Everything after the first filler (' + WL.actionOf(rot[fi], b).label + ') is never cast — move the filler to the end');
   // Talent-gated actions without the talent (they would silently never fire).
-  var gated = { conflagrate: 'conflagrate', conflagrateExpire: 'conflagrate', shadowburn: 'shadowburn', incinerate: 'incinerate', wrack: 'wrack', wrackDots: 'wrack', siphonLife: 'siphonLife',
+  var gated = { amplifyCurse: 'amplifyCurse', conflagrate: 'conflagrate', conflagrateExpire: 'conflagrate', shadowburn: 'shadowburn', incinerate: 'incinerate', wrack: 'wrack', wrackDots: 'wrack', siphonLife: 'siphonLife',
     searingPainBrand: 'demonicBrand', searingPainDecimation: 'decimation', lifeTapPet: 'demonicEnergies', shadowburnSnF: 'shadowAndFlame', conflagrateSnF: 'shadowAndFlame', shadowBoltSpread: 'improvedShadowBolt', isbUpkeep: 'improvedShadowBolt' };
   if (rot.indexOf('shadowburnSnF') >= 0 && !t.shadowburn) errs.push('"' + WL.ACTIONS.shadowburnSnF.label + '" needs the Shadowburn talent');
   if (rot.indexOf('conflagrateSnF') >= 0 && !t.conflagrate) errs.push('"' + WL.ACTIONS.conflagrateSnF.label + '" needs the Conflagrate talent');
@@ -98,13 +98,23 @@ WL.validateBuild = function (b) {
 
 // Spells a player can put on the fight timeline (all castable Warlock spells; Bane of Havoc is automatic with 2+ targets).
 WL.TIMELINE_SPELLS = ['curseOfElements', 'baneOfDoom', 'baneOfAgony', 'corruption', 'siphonLife', 'immolate', 'conflagrate', 'shadowburn',
-  'soulFire', 'shadowBolt', 'incinerate', 'searingPain', 'drainLife', 'drainSoul', 'wrack', 'hellfire', 'rainOfFire', 'deathCoil', 'lifeTap'];
+  'soulFire', 'shadowBolt', 'incinerate', 'searingPain', 'drainLife', 'drainSoul', 'wrack', 'hellfire', 'rainOfFire', 'deathCoil', 'lifeTap', 'amplifyCurse'];
+
+// An explicit Amplify Curse entry takes control away from the automatic Bane of Agony use. Only entries actually
+// present in the priority (including groups/rules) or fight timeline count; an unused rule does not change behavior.
+WL.manualAmplify = function (b) {
+  return WL.expandGroups(b).some(function (key) {
+    var action = WL.actionOf(key, b);
+    return key === 'amplifyCurse' || !!(action && action.rule && action.rule.spell === 'amplifyCurse');
+  }) || (b.timeline || []).some(function (entry) { return entry.k === 'amplifyCurse'; });
+};
 
 // Time a timeline entry blocks the caster (cast or GCD, whichever is longer; channels their full duration), with the stats
 // of `cfg` (haste, Spellstone, Bane). Decimation / Shadow Trance can only make casts shorter, so they are not assumed.
 WL.timelineSpan = function (b, cfg, k) {
   var st = WL.computeStats(b, 'human', cfg), tab = WL.buildSpellTable(b, st, cfg), s = WL.SPELLS[k], h = 1 + (st.hastePct || 0) / 100;
   var gcd = Math.max(cfg.combat.minGcd, cfg.combat.gcd / h);
+  if (s && s.offGcd) return { cast: 0, span: 0, gcd: 0, cd: tab[k] ? tab[k].cd : s.cd };
   if (k === 'lifeTap' || !tab[k]) return { cast: 0, span: gcd, gcd: gcd };
   if (s.kind === 'channel') return { cast: s.duration, span: s.duration, gcd: gcd };
   var cast = tab[k].cast / h;
@@ -268,6 +278,7 @@ WL.editorActions = function () {
 // ---------- talent point value (round 148, user): the build with one point fewer in one talent ----------
 // Priority actions that need a talent (or several) to do anything — the same rules as WL.validateBuild's checks.
 WL.ACTION_TALENTS = {
+  amplifyCurse: ['amplifyCurse'],
   conflagrate: ['conflagrate'], conflagrateExpire: ['conflagrate'], shadowburn: ['shadowburn'], incinerate: ['incinerate'],
   wrack: ['wrack'], wrackDots: ['wrack'], siphonLife: ['siphonLife'], searingPainBrand: ['demonicBrand'],
   searingPainDecimation: ['decimation'], lifeTapPet: ['demonicEnergies'], shadowBoltSpread: ['improvedShadowBolt'],

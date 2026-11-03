@@ -535,6 +535,7 @@ window.WL = window.WL || {};
     var NT = Math.max(1, Math.min(3, cfg.fight.targets || 1));
     var HAV_T = HAV ? 2 : 0;
     var ROT = WL.effectiveRotation(build, cfg);
+    var MANUAL_AMP = WL.manualAmplify(build);
     var ACTS = ROT.map(function (k) { return WL.actionOf(k, build); });   // round 157: built-in actions and the build's rules
     // Fight timeline (round 70, user; A73): an optional list of spells at fixed start times, built in the editor's
     // "super advanced" mode. A due entry is cast before the priority; the priority fills the gaps (only casts that end before
@@ -825,6 +826,15 @@ window.WL = window.WL || {};
 
     function startCast(key, target, fromTL, actIdx) {   // actIdx: place of the priority action that picked it (channel clipping)
       var s = SPELLS[key], e = table[key], rk = target > 1 ? xkey(target, key) : key;
+      if (key === 'amplifyCurse') {
+        S.cds.amplifyCurse = S.t + s.cd;
+        S.buffs.amplifyCurse = S.t + s.duration;
+        row(key).casts++;
+        L('cast', key, { castTime: 0, gcd: 0, timeline: fromTL || undefined });
+        L('buff', key); slotUsed(key);
+        decide();                                                        // off the GCD: the next action can use the same instant
+        return;
+      }
       var castT = S.castTime(key), gcdT = S.gcd();
       var instantTrance = isSB(key) && S.buff('shadowTrance');
       var paid = effectiveCost(key);
@@ -834,8 +844,10 @@ window.WL = window.WL || {};
       // Amplify Curse: off the GCD, next Bane of Agony +50%; 3 min cooldown. [A52] Round 153 (user): it takes that Bane of
       // Agony's final tick value after all calculations and multiplies it by 1.5 (rounds 25–152: the base value only).
       var castMult = 1;
-      if (key === 'baneOfAgony' && tv('amplifyCurse') && S.ready('amplifyCurse') && slotGate('amplifyCurse') !== 0) {   // timeline row (round 120): held for its placed time
-        castMult = 1 + tv('amplifyCurse', 'boaPct') / 100; S.cds.amplifyCurse = S.t + 180; L('buff', 'amplifyCurse'); slotUsed('amplifyCurse');
+      if (key === 'baneOfAgony' && tv('amplifyCurse') && (S.buff('amplifyCurse') || (!MANUAL_AMP && S.ready('amplifyCurse') && slotGate('amplifyCurse') !== 0))) {
+        castMult = 1 + tv('amplifyCurse', 'boaPct') / 100;
+        if (S.buff('amplifyCurse')) delete S.buffs.amplifyCurse;
+        else { S.cds.amplifyCurse = S.t + 180; L('buff', 'amplifyCurse'); slotUsed('amplifyCurse'); }
       }
       if (s.shards && !(key === 'soulFire' && S.buff('decimation'))) S.shards -= s.shards;
       if (key === 'soulFire' && S.buff('decimation')) delete S.buffs.decimation;
@@ -1156,7 +1168,7 @@ window.WL = window.WL || {};
       var f = altBelow(S.actionIndex), fRate = f ? expCast(f, 0, key === 'immolate') / (occupies(f) + LAT) : 0;
       var cost = (occupies(key) + LAT) * fRate;
       var end = Math.min(dur, tL + s.duration), gcd = S.gcd(), value = 0;
-      var castMult = key === 'baneOfAgony' && tv('amplifyCurse') && S.ready('amplifyCurse') && slotGate('amplifyCurse') !== 0 ? 1 + tv('amplifyCurse', 'boaPct') / 100 : 1;
+      var castMult = key === 'baneOfAgony' && tv('amplifyCurse') && (S.buff('amplifyCurse') || (!MANUAL_AMP && S.ready('amplifyCurse') && slotGate('amplifyCurse') !== 0)) ? 1 + tv('amplifyCurse', 'boaPct') / 100 : 1;
       var tickAmt = (s.tickBase + s.tickCoef * spNow(e)) * castMult * e.periodicMult * lmult(key, ti, true) * expVuln(s.school, ti) * expCrit(e.critPct, e.critMult);
       if (f === 'wrack' && SPELLS.wrack.debuffSpells.indexOf(key) >= 0) tickAmt *= 1 + SPELLS.wrack.debuffPct / 100;   // ticks during the Wrack filler
       // Conflagrate (Destruction): a new Immolate lets the next Conflagrate happen, which then consumes it (unless
@@ -1266,7 +1278,7 @@ window.WL = window.WL || {};
 
     // ---------- fight timeline (round 70, A73) ----------
     // Time a priority spell takes before the next decision (cast or GCD, whichever is longer).
-    function tlOccupies(k) { if (k === 'lifeTap' || !SPELLS[k] || k.indexOf('swap:') === 0) return S.gcd(); return Math.max(S.castTime(k), S.gcd()); }
+    function tlOccupies(k) { if (SPELLS[k] && SPELLS[k].offGcd) return 0; if (k === 'lifeTap' || !SPELLS[k] || k.indexOf('swap:') === 0) return S.gcd(); return Math.max(S.castTime(k), S.gcd()); }
     function tlUsable(k) {
       if (k === 'conflagrate') return S.dotLeft('immolate') > 0;
       if (k === 'shadowburn') return S.shards > 0;

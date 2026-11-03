@@ -3,7 +3,7 @@
     "commit":  "278f7a5",
     "subject":  "Round 183: the fourth headline number is the damage split (you / pet)",
     "uncommittedChanges":  true,
-    "localChanges": "Wrack November 2 tuning: 86 base damage, 0.286 coefficient, no Improved Drains bonus",
+    "localChanges": "Wrack November 2 tuning; explicit Amplify Curse APL support; direct build transfer to bundled 3D practice room",
     "synced":  "2026-11-03",
     "files":  [
                   "data/consumables.js",

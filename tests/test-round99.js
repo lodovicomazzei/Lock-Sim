@@ -4,14 +4,14 @@
   function cfg() { return JSON.parse(JSON.stringify(WL.DEFAULT_CONFIG)); }
   function tb(t) { return { key: 't99', short: 't', name: 't', notes: '', talents: t, pet: null, sacrifice: null, oil: 'none', rotation: ['shadowBolt'] }; }
   function table(t, c) { c = c || cfg(); var b = tb(t); return WL.buildSpellTable(b, WL.computeStats(b, 'human', c), c); }
-  var ALL = { incinerate: 1, conflagrate: 1, shadowburn: 1, baneOfHavoc: 1, siphonLife: 1, wrack: 1 };   // talents that teach a spell
+  var ALL = { incinerate: 1, conflagrate: 1, shadowburn: 1, baneOfHavoc: 1, siphonLife: 1, wrack: 1, amplifyCurse: 1 };   // talents that teach a spell
 
   T.run('round 99: spell ranges', function () {
     T.group('data');
     var keys = Object.keys(WL.SPELLS);
     T.ok(keys.every(function (k) { return typeof WL.SPELLS[k].range === 'number' && WL.SPELLS[k].range >= 0; }), 'every one of the ' + keys.length + ' spells has a range');
     var not30 = keys.filter(function (k) { return WL.SPELLS[k].range !== 30; }).sort().join(',');
-    T.eq(not30, 'drainLife,hellfire,lifeTap', 'all 30 yd except Drain Life, Life Tap and Hellfire (around you; round 100)');
+    T.eq(not30, 'amplifyCurse,drainLife,hellfire,lifeTap', 'all 30 yd except Drain Life and the spells cast on/around yourself');
     T.eq(WL.SPELLS.drainLife.range, 20, 'Drain Life 20 yd');
     T.eq(WL.SPELLS.lifeTap.range, 0, 'Life Tap 0 = cast on yourself');
     T.eq(WL.SPELLS.hellfire.range, 0, 'Hellfire 0 = around yourself');
