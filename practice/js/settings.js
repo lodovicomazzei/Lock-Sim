@@ -1,0 +1,66 @@
+// The choices that are kept in this browser between visits: build, race, the dummies' health and number, range rings.
+
+const STORE_KEY = 'forever-warlocking.settings';
+const DEFAULTS = {
+  build: null, race: 'human', dummyHealth: 50000, rings: true, dummies: 1, sound: false,
+  fight: { timed: false, seconds: 180, endless: '', moveEvery: 0, moveDuration: 0, hitEvery: 0 },   // how the fight ends (endless: '' | 'full' | 'execute' = infinite health), movement, hits taken
+  buildCode: '', settingsCode: '',     // imported from the DPS sim
+  homes: {}, keys: null,               // your own places for spells on the bar, and your own keys for the slots
+  binds: null,                         // your own keys for walking, jumping, targeting, the pet, stopping a cast
+  show: null,                          // the switches in the bar on the right: { rotation, race, callouts }
+  latency: 0,                          // milliseconds every key press takes to arrive
+  drills: {},                          // your best result per drill or encounter: { id: { grade, pct, dps } }
+  bests: {},                           // your best result per fight you set up yourself: { fight: { dps, pct, at } }
+  volume: 0.6,                         // how loud the sounds are, 0 to 1
+  touchHelp: false,                    // the note about touch controls was shown (touch screens only)
+  pullSeconds: 5,                      // how long the pull timer counts down
+  resultsVersion: 0,                   // bests and drill grades start over when the way they are measured changes
+  robe: 'violet', robesSeen: null,     // the robe you wear, and the robes you were already told you earned
+  bosses: {},                          // per boss fight: { best: { pct, dps, grade } (a run you lived through), beat: true once you had 100% of the sim }
+  demonLook: 'usual', rewardsSeen: [], // the Succubus's look (a boss reward), and the rewards you were already told about
+  uiScale: 1, colorBlind: false        // the interface's size (0.8 to 1.4), and colours that do not lean on red against green
+};
+
+let saved = {};
+try {
+  saved = JSON.parse(window.localStorage.getItem(STORE_KEY)) || {};
+} catch (e) {
+  saved = {};
+}
+
+export function getSetting(key) {
+  return saved[key] !== undefined && saved[key] !== null ? saved[key] : DEFAULTS[key];
+}
+
+export function setSetting(key, value) {
+  saved[key] = value;
+  try {
+    window.localStorage.setItem(STORE_KEY, JSON.stringify(saved));
+  } catch (e) {
+    // Private windows may refuse storage; the choice then lasts until the page is closed.
+  }
+}
+
+// Things that grow get a store of their own, so the settings stay small: 'history' (your last results per fight) and
+// 'curves' (the damage curve of your best per fight). Each is one object kept under its own name.
+const stores = {};
+export function getStore(name) {
+  if (!stores[name]) {
+    try { stores[name] = JSON.parse(window.localStorage.getItem(STORE_KEY.replace('settings', name))) || {}; } catch (e) { stores[name] = {}; }
+  }
+  return stores[name];
+}
+export function saveStore(name) {
+  try { window.localStorage.setItem(STORE_KEY.replace('settings', name), JSON.stringify(stores[name] || {})); } catch (e) { /* as above */ }
+}
+
+export const DUMMY_HEALTH_MIN = 100;
+export const DUMMY_HEALTH_MAX = 100000000;
+
+// Turns what was typed into a health pool, or null when it is not a usable number ("25k" and "1.5m" are understood).
+export function parseHealth(text) {
+  const match = String(text).replace(/[\s,_']/g, '').toLowerCase().match(/^(\d+(?:\.\d+)?)([km]?)$/);
+  if (!match) return null;
+  const value = Math.round(parseFloat(match[1]) * (match[2] === 'k' ? 1000 : match[2] === 'm' ? 1000000 : 1));
+  return value >= DUMMY_HEALTH_MIN && value <= DUMMY_HEALTH_MAX ? value : null;
+}

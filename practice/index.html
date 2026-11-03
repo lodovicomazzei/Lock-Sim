@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Forever Warlocking</title>
+<link rel="icon" type="image/png" sizes="64x64" href="art/logo-64.png">
+<link rel="icon" type="image/svg+xml" href="art/logo.svg">
+<link rel="apple-touch-icon" href="art/logo-400.png">
+<link rel="stylesheet" href="css/game.css?v=9aecf4b8af">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.min.js",
+    "./js/aids.js": "./js/aids.js?v=9aecf4b8af",
+    "./js/boss-onyxia.js": "./js/boss-onyxia.js?v=9aecf4b8af",
+    "./js/boss-testbed.js": "./js/boss-testbed.js?v=9aecf4b8af",
+    "./js/bossbot.js": "./js/bossbot.js?v=9aecf4b8af",
+    "./js/bosses.js": "./js/bosses.js?v=9aecf4b8af",
+    "./js/card.js": "./js/card.js?v=9aecf4b8af",
+    "./js/chamber.js": "./js/chamber.js?v=9aecf4b8af",
+    "./js/combat.js": "./js/combat.js?v=9aecf4b8af",
+    "./js/controls.js": "./js/controls.js?v=9aecf4b8af",
+    "./js/cost.js": "./js/cost.js?v=9aecf4b8af",
+    "./js/creatures.js": "./js/creatures.js?v=9aecf4b8af",
+    "./js/effects.js": "./js/effects.js?v=9aecf4b8af",
+    "./js/encounter.js": "./js/encounter.js?v=9aecf4b8af",
+    "./js/extras.js": "./js/extras.js?v=9aecf4b8af",
+    "./js/fights.js": "./js/fights.js?v=9aecf4b8af",
+    "./js/gamepad.js": "./js/gamepad.js?v=9aecf4b8af",
+    "./js/ghost.js": "./js/ghost.js?v=9aecf4b8af",
+    "./js/hud.js": "./js/hud.js?v=9aecf4b8af",
+    "./js/keys.js": "./js/keys.js?v=9aecf4b8af",
+    "./js/kit.js": "./js/kit.js?v=9aecf4b8af",
+    "./js/lair.js": "./js/lair.js?v=9aecf4b8af",
+    "./js/lessons.js": "./js/lessons.js?v=9aecf4b8af",
+    "./js/main.js": "./js/main.js?v=9aecf4b8af",
+    "./js/mechanics.js": "./js/mechanics.js?v=9aecf4b8af",
+    "./js/models.js": "./js/models.js?v=9aecf4b8af",
+    "./js/names.js": "./js/names.js?v=9aecf4b8af",
+    "./js/onyxia.js": "./js/onyxia.js?v=9aecf4b8af",
+    "./js/panels.js": "./js/panels.js?v=9aecf4b8af",
+    "./js/pets.js": "./js/pets.js?v=9aecf4b8af",
+    "./js/progress.js": "./js/progress.js?v=9aecf4b8af",
+    "./js/raid.js": "./js/raid.js?v=9aecf4b8af",
+    "./js/record.js": "./js/record.js?v=9aecf4b8af",
+    "./js/replay.js": "./js/replay.js?v=9aecf4b8af",
+    "./js/room.js": "./js/room.js?v=9aecf4b8af",
+    "./js/settings.js": "./js/settings.js?v=9aecf4b8af",
+    "./js/share.js": "./js/share.js?v=9aecf4b8af",
+    "./js/sound.js": "./js/sound.js?v=9aecf4b8af",
+    "./js/spellbook.js": "./js/spellbook.js?v=9aecf4b8af",
+    "./js/timeline.js": "./js/timeline.js?v=9aecf4b8af",
+    "./js/tooltip.js": "./js/tooltip.js?v=9aecf4b8af",
+    "./js/touch.js": "./js/touch.js?v=9aecf4b8af",
+    "./js/warlock.js": "./js/warlock.js?v=9aecf4b8af"
+  }
+}
+</script>
+<!-- Fetch the 3D library and every game file at once instead of one after the other. List new js/ files here too. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.min.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.min.js">
+<link rel="modulepreload" href="js/main.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/chamber.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/warlock.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/models.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/controls.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/hud.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/names.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/combat.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/settings.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/pets.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/effects.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/panels.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/sound.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/kit.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/tooltip.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/extras.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/keys.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/record.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/timeline.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/encounter.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/share.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/touch.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/aids.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/card.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/gamepad.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/lessons.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/progress.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/ghost.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/replay.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/fights.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/cost.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/lair.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/onyxia.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/creatures.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/room.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/raid.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/mechanics.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/boss-onyxia.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/boss-testbed.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/bosses.js?v=9aecf4b8af">
+<link rel="modulepreload" href="js/spellbook.js?v=9aecf4b8af">
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="hud">
+  <!-- Top left: where this project, the Warlock SIM and its in-game addon live. Buttons like the ones at the top
+       right; each opens its address in a new tab. The logo stands for this page; the labels are short on purpose:
+       the row ends where the bar at the top right begins when a build with a long name is picked. The GitHub buttons
+       show GitHub's mark in place of the word, so the addon's GitHub fits too (Xn, 2026-10-16). -->
+  <nav id="links" class="toolbar">
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true"><symbol id="ghMark" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol></svg>
+    <div class="group">
+      <img class="logo" src="art/logo-64.png" width="30" height="30" alt="Forever Warlocking" title="Forever Warlocking, the page you are on">
+      <button type="button" data-link="https://github.com/XNWLK/ForeverWarlocking" title="Forever Warlocking's code on GitHub (opens in a new tab)" aria-label="Forever Warlocking on GitHub"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><use href="#ghMark"/></svg></button>
+    </div>
+    <div class="group">
+      <span class="label" title="Xn's Forever Warlock Sim, the DPS sim this practice sim takes its numbers from">SIM</span>
+      <button type="button" data-link="../" title="Open the Warlock SIM, the DPS sim this practice sim takes its numbers from (opens in a new tab)">Open</button>
+      <button type="button" data-link="https://github.com/XNWLK/WarlockSIM" title="The Warlock SIM's code on GitHub (opens in a new tab)" aria-label="The Warlock SIM on GitHub"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><use href="#ghMark"/></svg></button>
+    </div>
+    <div class="group">
+      <button type="button" data-link="https://www.curseforge.com/wow/addons/xns-warlock-sim" title="Xn's Warlock Sim: the sim as an addon inside the game, with your own character. Its build and settings codes can be imported here (opens its page on CurseForge in a new tab)">Addon</button>
+      <button type="button" data-link="https://github.com/XNWLK/WarlockSIMAddon" title="The addon's code on GitHub (opens in a new tab)" aria-label="Xn's Warlock Sim on GitHub"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><use href="#ghMark"/></svg></button>
+    </div>
+    <div class="group">
+      <button type="button" class="twitch" data-link="https://www.twitch.tv/ascalontv" title="Xn's live stream on Twitch: come by with questions, or just to say hi (opens in a new tab)" aria-label="Xn's live stream on Twitch"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg></button>
+      <button type="button" class="discord" data-link="https://discord.gg/uepKAsY" title="Xn's Discord: questions, ideas, or just to talk (opens in a new tab)" aria-label="Xn's Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></button>
+    </div>
+  </nav>
+
+  <!-- Left, under the links: Challenges, Lessons and Progress, each a window of its own -->
+  <div id="challengeBar" class="toolbar">
+    <div class="group">
+      <button type="button" id="btnChallenges" class="gold" title="Today's fight, drills and scripted encounters graded against the sim, and the seeded fight">Challenges</button>
+      <button type="button" id="btnLessons" title="A short series of lessons for the build you play, each with a test that opens the next">Lessons</button>
+      <button type="button" id="btnProgress" title="How you have been doing over the days: your share of the sim and whether your mistakes are getting smaller">Progress</button>
+      <button type="button" id="btnHistory" title="Your last fights: open one again to see its review and its combat log">History</button>
+    </div>
+  </div>
+  <!-- Under Challenges: bosses from the game with their mechanics, to come once the bosses are known (does nothing yet) -->
+  <div id="bossBar" class="toolbar">
+    <div class="group">
+      <button type="button" id="btnBosses" title="Fight a real boss from the game with its own mechanics, instead of a training dummy">Bosses</button>
+    </div>
+  </div>
+
+  <!-- Top right: one slim bar with everything you set up before a fight; its panels open under it -->
+  <section id="topBar">
+    <div class="toolbar">
+      <div class="group">
+        <span class="label">Dummies</span>
+        <div class="seg">
+          <button type="button" data-dummies="1">1</button>
+          <button type="button" data-dummies="2">2</button>
+          <button type="button" data-dummies="3">3</button>
+        </div>
+      </div>
+      <div class="group">
+        <span class="label" id="buildLabel"></span>
+        <button type="button" id="btnBuild">Build</button>
+        <button type="button" id="btnRace">Race</button>
+        <button type="button" id="btnImport" title="Play your own build, gear and buffs from the DPS sim">Import</button>
+        <button type="button" id="btnFight" title="How the fight ends, movement, hits taken">Fight</button>
+      </div>
+      <div class="group">
+        <button type="button" id="btnKeys" title="See and change every key">Keybinds</button>
+        <button type="button" id="btnEdit" title="All your spells: drag them onto the action bar. Also moves spells and changes keys">Spellbook</button>
+        <button type="button" id="btnRings" class="on" aria-pressed="true" title="Rings on the ground that show your spell ranges (violet for Affliction and pink for Destruction when they differ, green Drain Life, orange the Succubus)">Rings</button>
+        <button type="button" id="btnSound" aria-pressed="false" title="Sounds on or off">Sound</button>
+        <button type="button" id="btnPull" title="Starts the fight again with a countdown to the pull, so you can time a precast. The fight begins at zero, or sooner if your spell lands first. Press it again to stop the countdown.">Pull</button>
+        <button type="button" id="btnReset" title="Start the fight again">Reset</button>
+      </div>
+    </div>
+    <div class="panel picker" id="buildPanel" hidden>
+      <h2>Build</h2>
+      <div class="options" id="buildOptions"></div>
+    </div>
+    <div class="panel picker" id="fightPanel" hidden>
+      <h2>Fight</h2>
+      <form id="fightForm" class="form" novalidate>
+        <label><input type="radio" name="mode" value="health" checked> Ends when the dummies are dead</label>
+        <label><input type="radio" name="mode" value="timed"> Ends after <input type="number" id="fightSeconds" min="10" max="1800" step="1" value="180"> seconds</label>
+        <label><input type="radio" name="mode" value="endless"> Infinite health: lasts until you end it</label>
+        <label><input type="radio" name="mode" value="execute"> Infinite health, in execute range all the time</label>
+        <label>You have to move every <input type="number" id="moveEvery" min="0" max="600" step="1" value="0"> s, for <input type="number" id="moveDuration" min="0" max="60" step="0.5" value="0"> s</label>
+        <label>You take a hit every <input type="number" id="hitEvery" min="0" max="60" step="0.5" value="0"> s</label>
+        <p class="hint">0 = never. While you have to move, only instant spells work. A hit pushes back the spell you are casting. In a timed fight the dummies' health falls evenly, as in the DPS sim. With infinite health you end the fight yourself: "Review the fight" reads "End the fight and review" while it runs.</p>
+        <button type="submit">Apply and restart</button>
+      </form>
+    </div>
+    <div class="panel picker" id="importPanel" hidden>
+      <h2>Import from the DPS sim</h2>
+      <label>Build code (starts with WFB1:)<textarea id="importBuild" rows="2" spellcheck="false"></textarea></label>
+      <label>Settings code (starts with WFS1:)<textarea id="importSettings" rows="2" spellcheck="false"></textarea></label>
+      <label>Or a share link from the DPS sim (has #share= in it)<textarea id="importLink" rows="2" spellcheck="false"></textarea></label>
+      <div class="buttons"><button type="button" id="importApply">Apply</button><button type="button" id="importClear">Remove both</button></div>
+      <p class="hint" id="importStatus"></p>
+    </div>
+    <div class="panel picker" id="racePanel" hidden>
+      <h2>Race</h2>
+      <div class="options" id="raceOptions"></div>
+    </div>
+    <div class="panel keys" id="keysPanel" hidden>
+      <h2>Keybinds</h2>
+      <p class="hint">Click a key, then press the new one (or click the middle or a thumb button, or turn or tilt the wheel). Escape leaves it as it is. A key that is already in use trades places. Spells, targeting, the pet, Reset, the pull timer, the review and zooming take a key, a key with Shift, Ctrl or Alt held, the middle mouse button, the thumb buttons (with or without those keys), and the wheel up, down, tilted left or right, plain or with a modifier. Walking and jumping take a plain key, the middle button or a thumb button.</p>
+      <div class="binds"><div id="bindsLeft"></div><div id="bindsRight"></div></div>
+      <p class="hint">Mouse: hold right to steer, hold left to look around, both buttons walk forward, the wheel zooms unless you bind it to something (Zoom in and Zoom out can have keys as well). Click a dummy to target it. The arrow keys always move you. "Edit bar" moves spells between slots. A few combinations belong to the browser and never reach the game (Ctrl+W, Ctrl+T, Ctrl+N, Ctrl+Tab, and Ctrl+1 to 9 in some browsers).</p>
+      <p class="hint">Controller: the left stick walks, the right stick turns and looks. A B X Y cast slots 1 to 4; with the left trigger held slots 5 to 8, with the right trigger 9 to 12, with both 13 to 15. LB jumps, RB takes the next dummy. D-pad: up pull timer, down stop casting, left pet follow, right pet attack. Start resets the fight, Back opens the review. While you use it the slots show its buttons. Menus still take the mouse.</p>
+      <button type="button" id="bindsReset" class="wide">All keys back to default</button>
+    </div>
+  </section>
+
+  <!-- Right: the bar of things you can switch on or open. Its groups fold away. -->
+  <aside id="side" class="panel side">
+    <details open>
+      <summary>Show</summary>
+      <label class="switch"><input type="checkbox" id="swRotation"><span>Rotation panel</span></label>
+      <label class="switch"><input type="checkbox" id="swRace"><span>Race the sim live</span></label>
+      <label class="switch"><input type="checkbox" id="swCallouts"><span>Mistake callouts</span></label>
+      <label class="switch" title="A bar for each of your DoTs that is running, shortest first. Gold means: cast it again now, it will land as the old one runs out. A pale edge means: it is due right after your next cast, so start nothing long. An instant DoT is cast again when it is gone."><input type="checkbox" id="swDotBars"><span>DoT timers</span></label>
+      <label class="switch" title="Shows the sim's first eight casts in this fight as a row of pictures and ticks them off as you cast: green when yours is the same spell, red when it is another. It fades once the opener is done."><input type="checkbox" id="swOpener"><span>Opener trainer</span></label>
+      <label class="switch" title="Shows what the sim's priority list would cast in your place right now and why, and lights it up on your bar. For learning a rotation; switch it off to test yourself."><input type="checkbox" id="swHint"><span>The sim's next cast</span></label>
+      <label class="switch" title="A see-through second Warlock a little to your right that casts what the sim casts, at the same second of the fight (one of the sim's own fights: the order of things, not your dice)."><input type="checkbox" id="swGhost"><span>The sim as a ghost</span></label>
+      <label class="switch" title="When Shadow Trance or Decimation comes up: a word at the top of the screen, a chime (with the sound on) and a strong glow on the button to press."><input type="checkbox" id="swAlerts"><span>Proc alerts</span></label>
+    </details>
+    <details>
+      <summary>Your character</summary>
+      <p class="hint">From the Warlock SIM, to look at only.</p>
+      <div class="stack">
+        <button type="button" id="btnSheet">Character sheet</button>
+        <button type="button" id="btnTalents">Talents</button>
+        <button type="button" id="btnBuffs">Buffs and consumables</button>
+      </div>
+    </details>
+    <details>
+      <summary>Fight</summary>
+      <label title="How long each key press takes to arrive, as on a slow connection. The sim average waits just as long after each cast.">Latency <input type="number" id="latency" min="0" max="1000" step="10" value="0"> ms</label>
+      <label title="How long the Pull button at the top counts down before the fight begins">Pull timer <input type="number" id="pullSeconds" min="1" max="30" step="1" value="5"> s</label>
+      <p class="hint">Presets (they replace your fight settings):</p>
+      <div class="stack" id="presets"></div>
+    </details>
+    <details>
+      <summary>Screen</summary>
+      <label class="range" id="uiScaleLabel" title="Makes the frames, bars, panels and windows smaller or bigger. Bigger only as far as your window has room for the whole layout. The plates and damage numbers over the dummies keep their size.">Interface size <input type="range" id="uiScale" min="80" max="140" step="5" value="100"><b id="uiScaleText">100%</b></label>
+      <label class="switch" title="Other colours for everything that is told apart by red against green: health and hostile bars, DoT timers, the sim's next cast, the opener trainer, the review's marks and its timeline. Marks get a shape as well as a colour."><input type="checkbox" id="swColorBlind"><span>Colour-blind colours</span></label>
+    </details>
+    <details>
+      <summary>Sound, link, log</summary>
+      <label class="range" title="How loud the sounds are. The Sound button at the top switches them on and off.">Volume <input type="range" id="volume" min="0" max="100" step="5" value="60"></label>
+      <div class="stack">
+        <button type="button" id="btnShare" title="Copies an address that opens this page with your build, race, dummies and fight options already set (and the challenge you are in)">Copy a link to this setup</button>
+        <button type="button" id="btnCopyLog">Copy the whole log</button>
+      </div>
+    </details>
+  </aside>
+
+  <!-- Left: what the sim plays with this build, top first -->
+  <section id="rotationPanel" class="panel rotation" hidden>
+    <h2>Rotation</h2>
+    <ol id="rotationList"></ol>
+    <p class="hint">The sim's priority list for this build: it casts the first line that applies, and taps when mana is too low for the next spell. From the Warlock SIM.</p>
+  </section>
+
+  <!-- Top centre: the drill or seeded fight that is running, and quiet notes about mistakes -->
+  <div id="topCentre">
+    <div id="challengeTag" class="panel chip" hidden><span id="challengeText"></span><button type="button" id="challengeEnd">End</button></div>
+    <!-- A boss fight: the boss's own frame, always there; a click targets the boss (handy while she flies) -->
+    <button type="button" id="bossFrame" class="panel boss-frame" hidden title="Click to target her">
+      <span class="bf-top"><b id="bossFrameName"></b><span id="bossFramePhase"></span></span>
+      <span class="bf-bar"><i id="bossFrameFill"></i><span id="bossFrameHealth"></span></span>
+      <span id="bossFrameCast" class="bf-cast"></span>
+    </button>
+    <div id="procAlert" class="proc-alert" aria-live="polite"></div>
+    <div id="callout" class="callout" aria-live="polite"></div>
+  </div>
+
+  <!-- Bottom centre, from the top down: cast bar, buffs and debuffs, you / your pet / your target, action bar -->
+  <section id="bottomCentre">
+    <!-- The spellbook (opens with the bar's edit mode): every spell, to drag onto the bar -->
+    <div id="spellbook" class="panel spellbook" hidden>
+      <header><h2>Spellbook</h2><span>Drag a spell onto a slot, or click it and then a slot. Drag a slot off the bar to take it away. Kept for each build.</span><button type="button" id="spellbookClose">Close</button></header>
+      <div id="spellbookList" class="book-list"></div>
+    </div>
+    <div id="editStrip" class="panel edit-strip" hidden>
+      <span id="editText">Drag slots to swap them, or click two. Click a slot and press a key (or a mouse button) to give it that key.</span>
+      <button type="button" id="editReset">Back to default</button>
+      <button type="button" id="editDone">Done</button>
+    </div>
+    <div id="opener" class="opener" hidden><span>Opener</span><div id="openerIcons"></div><b id="openerText"></b></div>
+    <div id="simHint" class="sim-hint" hidden><span>The sim would cast</span><img id="simHintIcon" alt=""><b id="simHintText"></b><small id="simHintWhy"></small></div>
+    <div id="errorText" class="error-text" aria-live="polite"></div>
+    <div id="castBar" class="castbar idle"><i id="castFill"></i><b id="castText"></b></div>
+
+    <div id="auraRow">
+      <span class="auras" id="playerBuffs"></span>
+      <span class="auras large" id="targetDebuffs"></span>
+      <div id="dotBars" class="dotbars" hidden></div>
+    </div>
+
+    <div id="frames">
+      <section id="playerFrame" class="unit">
+        <img class="portrait" id="playerPortrait" alt="">
+        <div class="unit-body">
+          <div class="unit-name"><button type="button" class="name" data-name="warlock"></button><span class="unit-sub" id="playerSub"></span></div>
+          <div class="bar health"><i></i><b id="playerHealth"></b></div>
+          <div class="bar mana"><i id="playerManaFill"></i><b id="playerMana"></b></div>
+        </div>
+      </section>
+
+      <section id="petFrame" class="unit pet">
+        <div class="unit-body">
+          <div class="unit-name"><img class="portrait small" id="petPortrait" alt=""><button type="button" class="name" id="petName"></button><span class="unit-sub" id="petSub"></span></div>
+          <div class="bar health" id="petHealthBar"><i></i></div>
+          <div class="bar mana" id="petManaBar"><i id="petManaFill"></i><b id="petManaText"></b></div>
+          <div class="pet-buttons" id="petButtons">
+            <button type="button" id="btnPetAttack" title="Send your pet at your target">Attack</button>
+            <button type="button" id="btnPetFollow" title="Call your pet back to your side">Follow</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="targetFrame" class="unit hostile">
+        <div class="unit-body">
+          <div class="unit-name"><button type="button" class="name" data-name="dummy"></button><span class="unit-sub"><span id="targetSub">Boss</span> &middot; <span id="targetDistance" class="distance"></span></span></div>
+          <div class="bar health"><i id="targetHealthFill"></i><s id="executeMark" title="Execute phase starts here"></s><button type="button" id="targetHealth" title="Click to change the dummy's health"></button></div>
+        </div>
+        <svg class="portrait" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="22" fill="#2a1420"/><circle cx="22" cy="22" r="17" fill="#efe6dc"/><circle cx="22" cy="22" r="11.5" fill="#c2362f"/><circle cx="22" cy="22" r="5.5" fill="#efe6dc"/>
+        </svg>
+      </section>
+    </div>
+
+    <div id="actionBar" class="actionbar"></div>
+  </section>
+
+  <!-- Bottom left: combat log -->
+  <section id="combatLog" class="panel log">
+    <h2>Combat log</h2>
+    <ol id="logLines"></ol>
+  </section>
+
+  <!-- Bottom right: damage meter -->
+  <section id="meter" class="panel meter">
+    <div class="meter-main"><b id="meterDps">0</b><span>DPS</span></div>
+    <dl>
+      <dt>Damage</dt><dd id="meterDamage">0</dd>
+      <dt>Time</dt><dd id="meterTime">0:00</dd>
+      <dt title="The threat you cause each second: 1 for every point of damage, Searing Pain twice that. Suppression, Demonic Brand (for Searing Pain), Blessing of Salvation and Tranquil Air Totem lower it. Your pet's damage is its own threat.">Threat</dt><dd id="meterThreat">0</dd>
+      <dt title="What the DPS sim's priority list reaches on these dummies with the same character">Sim average</dt><dd id="meterSim">&ndash;</dd>
+      <dt title="Your best result in the fight that is set up now: this build, race, dummies and fight options">Your best</dt><dd id="meterBest">&ndash;</dd>
+      <dt id="meterDummiesLabel" hidden>Per dummy</dt><dd id="meterDummies" hidden></dd>
+    </dl>
+    <div id="race" class="race" hidden>
+      <div class="race-row"><span>You</span><i><b id="raceYou"></b></i></div>
+      <div class="race-row best" id="raceBestRow" hidden title="Where your best run of this fight stood at this second"><span>Best</span><i><b id="raceBest"></b></i></div>
+      <div class="race-row sim"><span>Sim</span><i><b id="raceSim"></b></i></div>
+      <p id="raceText"></p>
+      <p id="raceBestText" hidden></p>
+    </div>
+    <ol id="meterSpells"></ol>
+    <button type="button" id="btnReview" class="wide">Review the fight</button>
+  </section>
+
+  <!-- Touch screens only (phones, tablets without a mouse): a stick to walk, round buttons for what keys do on a
+       desktop, and a menu that takes in the bars from the top and the right (js/touch.js moves them into it) -->
+  <div id="touch">
+    <div id="stick"><i></i></div>
+    <div id="touchKeys">
+      <button type="button" id="btnTouchTarget" hidden>Target</button>
+      <button type="button" id="btnTouchStop">Stop</button>
+      <button type="button" id="btnTouchJump">Jump</button>
+    </div>
+    <button type="button" id="btnMenu">Menu</button>
+    <div id="touchMenu" hidden>
+      <header><h2>Forever Warlocking</h2><button type="button" id="touchMenuClose">Close</button></header>
+      <div id="touchMenuBody"></div>
+    </div>
+    <div id="touchHelp" class="panel" hidden>
+      <b>Touch controls</b>
+      <span>The stick on the left walks. Drag across the picture to turn, pinch to zoom, tap a dummy to target it.</span>
+      <span>Tap a spell to cast it; hold a finger on a spell or a buff to read it. Tap your DPS for the fight review. Everything else is under Menu.</span>
+      <small>Tap to close</small>
+    </div>
+  </div>
+</div>
+
+<div id="moveBanner" hidden></div>
+<section id="review" class="review" hidden>
+  <header><h2>Fight review</h2><button type="button" id="reviewClose">Close</button></header>
+  <div id="reviewBody"></div>
+</section>
+<section id="challenges" class="review sheet" hidden>
+  <header><h2>Challenges</h2><button type="button" id="challengesClose">Close</button></header>
+  <p class="hint">Fights with one thing to practise. Each is graded against what the sim reaches in the very same fight: S from 100%, A from 95%, B from 88%, C from 78%. Your own fight settings stay as they are; "End" at the top of the screen takes you back to them.</p>
+  <h3>Today's fight</h3>
+  <p class="hint">A new one every day, the same for everyone: the dice are fixed by the date (a day in UTC). Play it every day for a streak.</p>
+  <div class="cards" id="daily"></div>
+  <h3>Drills</h3>
+  <div class="cards" id="drills"></div>
+  <h3>Encounters</h3>
+  <p class="hint">Scripted fights: things happen at set moments. The sim cannot follow a script, so it plays a fight of the same length with about as much moving and as many hits, spread evenly.</p>
+  <div class="cards" id="encounters"></div>
+  <h3>Robes</h3>
+  <p class="hint">Earned with your grades in the drills and encounters above. Looks only.</p>
+  <div class="cards" id="robes"></div>
+  <h3>Seeded fight</h3>
+  <div class="card wide-card">
+    <p>Three minutes on one dummy with the dice fixed by a seed: everyone who types the same seed gets the same rolls, so results can be compared. The box starts with today's date. After the fight, "Copy the result" in the review gives you one line to pass on.</p>
+    <div class="seed"><input type="text" id="seed" maxlength="24" spellcheck="false" aria-label="Seed"><button type="button" id="seedStart">Start</button></div>
+  </div>
+</section>
+<section id="sheet" class="review sheet" hidden>
+  <header>
+    <h2 id="sheetTitle"></h2>
+    <div class="tabs"><button type="button" id="tabCharacter">Character</button><button type="button" id="tabTalents">Talents</button><button type="button" id="tabBuffs">Buffs</button></div>
+    <button type="button" id="sheetClose">Close</button>
+  </header>
+  <p class="hint from-sim" id="sheetNote"></p>
+  <div id="sheetBody"></div>
+</section>
+<section id="lessons" class="review sheet" hidden>
+  <header><h2>Lessons</h2><button type="button" id="lessonsClose">Close</button></header>
+  <p class="review-head" id="lessonsHead"></p>
+  <p class="hint">A short series for the build you play, made from its priority list in the Warlock SIM. Each lesson ends with a test: a short fight with a few things to reach. Pass it and the next lesson opens. Pick another build and its own lessons are here.</p>
+  <div class="cards lesson-cards" id="lessonList"></div>
+</section>
+<section id="bossWin" class="review sheet" hidden>
+  <header><h2>Bosses</h2><button type="button" id="bossClose">Close</button></header>
+  <p class="hint">A real boss with its own mechanics in its own room. A ghost tank holds the boss and ghost off-tanks hold the adds; the boss loses health at an even pace, so the fight always lasts as long. More bosses will follow.</p>
+  <div id="bossList" class="cards boss-cards"></div>
+  <h3>Rewards</h3>
+  <p class="hint">Earned by beating the sim in a boss fight. Looks only.</p>
+  <div id="bossRewards" class="cards boss-cards"></div>
+</section>
+<section id="historyWin" class="review sheet" hidden>
+  <header><h2>Fight history</h2><button type="button" id="historyClose">Close</button></header>
+  <div id="historyBody"></div>
+</section>
+<section id="progressWin" class="review sheet" hidden>
+  <header><h2>Progress</h2><button type="button" id="progressClose">Close</button></header>
+  <div id="progressBody"></div>
+</section>
+<div id="replayBar" class="panel replay-bar" hidden>
+  <div class="replay-row">
+    <button type="button" id="replayPlay">Pause</button>
+    <input type="range" id="replaySlider" min="0" max="1000" step="1" value="0" aria-label="Moment of the fight">
+    <span id="replayTime">0:00</span>
+    <span class="speeds"><button type="button" data-speed="0.5">½×</button><button type="button" data-speed="1" class="on">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button></span>
+    <button type="button" id="replayClose">Back to the review</button>
+  </div>
+  <p id="replayWhat"></p>
+</div>
+<div id="plates"></div>
+<div id="floaters" aria-hidden="true"></div>
+<div id="tip" hidden></div>
+<div id="fatal" hidden></div>
+
+<!-- The Warlock data and engine, in the order of vendor/warlock-sim/manifest.json -->
+<script src="vendor/warlock-sim/data/consumables.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/config.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/talents.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/spells.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/races.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/builds.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/trinkets.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/stats.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/spelltable.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/rng.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/resist.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/rotation.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/sim.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/custom-builds.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/engine/settings-code.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/icons.js?v=9aecf4b8af"></script>
+<script src="vendor/warlock-sim/data/tooltips.js?v=9aecf4b8af"></script>
+<!-- The ready builds ranked by their DPS in the DPS sim (tools/gen-build-order.js) -->
+<script src="data/build-order.js?v=9aecf4b8af"></script>
+
+<script>
+// Shown when the 3D library or the game code cannot start (module errors do not reach the page otherwise).
+window.addEventListener('error', function (e) {
+  var box = document.getElementById('fatal');
+  if (!box || window.FW) return;
+  box.hidden = false;
+  box.textContent = 'Forever Warlocking could not start: ' + (e.message || 'a file did not load') + '. Check your connection and reload.';
+}, true);
+</script>
+<script type="module" src="js/main.js?v=9aecf4b8af"></script>
+</body>
+</html>

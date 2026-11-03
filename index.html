@@ -1,0 +1,1555 @@
+<meta charset="utf-8">
+<title>Xn's Forever Warlock Sim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/png" sizes="64x64" href="art/logo-64.png">
+<link rel="apple-touch-icon" href="art/logo-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@600&display=swap">
+<style>
+  :root {
+    --ground: #F6F5F9; --surface: #FFFFFF; --sunk: #EEECF3; --line: #E2DEEA;
+    --ink: #1E1A2B; --muted: #6B6480; --accent: #6A3FB5; --accent-soft: #EEE7FA;
+    --good: #2F7A4B; --bad: #B23A3A;
+    /* stat colours: used for the stat bar chips AND the matching weight columns */
+    --c-sp: #6A3FB5; --c-hit: #0F8B8D; --c-crit: #D2632A; --c-haste: #2C74C9; --c-int: #B83C82; --c-pierce: #4D8A2E; --c-fight: #6B6480;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    --display: 'Spectral', Georgia, 'Times New Roman', serif;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;   /* chart series */
+    --sch-shadow: #7B4FD6; --sch-fire: #D44A2E; --sch-phys: #8A8F98; --sch-item: #C9A227;   /* damage by school (round 177) */
+    --tr-affliction: 76, 160, 90; --tr-demonology: 150, 92, 214; --tr-destruction: 226, 106, 42;   /* talent tree tints (r, g, b) */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #15121D; --surface: #1D1928; --sunk: #242033; --line: #312B40;
+      --ink: #ECE8F5; --muted: #A39CB8; --accent: #B393F0; --accent-soft: #2B2340; --good: #6CC592; --bad: #EE7B7B;
+      --c-sp: #B393F0; --c-hit: #4CC7C9; --c-crit: #F29360; --c-haste: #6FA8F0; --c-int: #EA7DBB; --c-pierce: #8CCB64; --c-fight: #A39CB8;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+      --sch-shadow: #9B76F2; --sch-fire: #EE6447;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #15121D; --surface: #1D1928; --sunk: #242033; --line: #312B40;
+    --ink: #ECE8F5; --muted: #A39CB8; --accent: #B393F0; --accent-soft: #2B2340; --good: #6CC592; --bad: #EE7B7B;
+    --c-sp: #B393F0; --c-hit: #4CC7C9; --c-crit: #F29360; --c-haste: #6FA8F0; --c-int: #EA7DBB; --c-pierce: #8CCB64; --c-fight: #A39CB8;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --sch-shadow: #9B76F2; --sch-fire: #EE6447;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scrollbar-gutter: stable; }   /* round 175: room for the scrollbar kept, so opening a card never shifts the page sideways */   /* no mobile font boosting next to wide tables */
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 12.5px/1.4 var(--sans); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 32px; display: grid; gap: 10px; }
+  .wrap > * { min-width: 0; }   /* let wide tables scroll inside their panel instead of widening the page */
+  /* round 173 (user): wide screens. Up to 1880 px of page; from 2350 px two columns (results | your character and the fight). */
+  .cols, .colmain, .colside { display: contents; }
+  .colmain > *, .colside > * { min-width: 0; }
+  /* stacked: each box's place in the list (round 176: --stack, set by app/app.js from the layout; Racials by fight length last by default) */
+  .colmain > *, .colside > * { order: var(--stack, 0); } #lenSheet { --stack: 9; } .foot { order: 100; }
+  /* your character and the fight: one panel, its title inside like the builds' (round 174) */
+  .charpanel { display: grid; gap: 10px; min-width: 0; }
+  .charpanel .charhead { margin: 0; }
+  .charpanel .setup > .card { background: var(--ground); }
+  @media (min-width: 1500px) { .wrap { max-width: min(1880px, 100%); } }
+  @media (min-width: 2350px) {
+    .wrap { max-width: 2560px; }
+    .cols { display: grid; grid-template-columns: minmax(1180px, 1fr) minmax(1080px, 1.05fr); gap: 10px 18px; align-items: start; }
+    .colmain, .colside { display: grid; gap: 10px; align-content: start; min-width: 0; }
+    .colmain > *, .colside > * { order: 0; }   /* side by side: the columns' own order (the layout puts the boxes in it) */
+    /* round 175 (user: cheat mode "messes with the window"): the room is there — the tabs card grows with its content instead of scrolling inside */
+    .charpanel .sidecard { height: auto; min-height: 0; overflow-y: visible; }
+  }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+  h1 { font: 600 21px/1.15 var(--display); margin: 0; }
+  .sitelogo { width: 32px; height: 32px; border-radius: 7px; flex: none; display: block; }
+  .titles { min-width: 0; flex: 1 1 480px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  /* light / dark switch (round 85): Auto = the old behaviour (system / viewer theme) */
+  .themebtn { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px 2px 8px; font: 600 11.5px var(--sans);
+              color: var(--muted); border-radius: 999px; line-height: 18px; }
+  .themebtn:hover { color: var(--ink); border-color: var(--accent); }
+  .themebtn svg { width: 14px; height: 14px; flex: none; }
+  /* Xn's live stream (round 163, user) */
+  .twitchbtn { display: inline-flex; align-items: center; gap: 6px; padding: 2px 11px 2px 9px; border-radius: 999px; line-height: 18px;
+               font: 600 11.5px var(--sans); color: #fff; background: #772ce8; text-decoration: none; white-space: nowrap; }
+  .twitchbtn:hover, .twitchbtn:focus-visible { background: #6420c9; color: #fff; }
+  .twitchbtn svg { width: 13px; height: 13px; flex: none; fill: currentColor; }
+  /* trinkets (round 166, user) */
+  .gbtrk { display: grid; gap: 4px; font-size: 12px; }
+  .gbtrk .trk { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .gbtrk .trk b { font-weight: 600; }
+  /* by fight length (round 166, user) */
+  .lentable { border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; width: auto; }
+  .lentable th, .lentable td { padding: 1px 7px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); line-height: 1.35; }
+  .lentable th:first-child, .lentable td:first-child { text-align: left; }
+  .lentable tr.lb td { font-weight: 600; padding-top: 6px; color: var(--ink); border-bottom-color: transparent; text-align: left; }
+  .lentable td.best { font-weight: 700; color: var(--accent); }
+  .lentable tr.base td { color: var(--muted); }
+  .lentable .lpct { display: inline-block; min-width: 4.6em; margin-left: 5px; font-size: 10.5px; color: var(--muted); font-weight: 400; text-align: right; }
+  .lentable td.best .lpct { color: var(--accent); }
+  /* cheat mode (round 166, user): a two-column list of spells */
+  .cheatlist { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 12px; align-items: center; font-size: 12px; margin: 6px 0; }
+  .cheatlist .ch { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .cheatlist label { display: inline-flex; align-items: center; gap: 4px; }
+  /* Discord server (round 166, user) */
+  .discordbtn { display: inline-flex; align-items: center; gap: 6px; padding: 2px 11px 2px 9px; border-radius: 999px; line-height: 18px;
+                font: 600 11.5px var(--sans); color: #fff; background: #4f5bd5; text-decoration: none; white-space: nowrap; }
+  .discordbtn:hover, .discordbtn:focus-visible { background: #3f49b8; color: #fff; }
+  .discordbtn svg { width: 14px; height: 14px; flex: none; fill: currentColor; }
+  /* project links next to the title (round 103, user) */
+  .toplinks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-size: 12px; color: var(--muted); }
+  .toplinks a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .toplinks a:hover, .toplinks a:focus-visible { text-decoration: underline; }
+  .toplinks .sep { opacity: .5; }
+  .meta { color: var(--muted); font-size: 12px; }
+  h2 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+
+  /* stat bar */
+  .statbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  .chip { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 8px; border-radius: 4px; background: var(--sunk); border-left: 3px solid var(--c, var(--muted)); }
+  .chip b { font: 600 12.5px var(--mono); color: var(--c, var(--ink)); font-variant-numeric: tabular-nums; }
+  .chip span { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .statbar .sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 4px; }
+  .statbar .end { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  /* round 169 (user: the build list up top, the first top bar pointless): the build list card carries Sim!, the numbers of the
+     run, the quick setup and the table; the old stat bar and the steps strip are gone as bars of their own */
+  .buildpanel { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .runbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .runbar h2 { margin: 0; font-size: 13px; color: var(--ink); letter-spacing: .06em; }
+  .buildpanel .statbar { background: none; border: 0; padding: 0; gap: 5px; }
+  .buildpanel .statbar .runbtn #runBtn { padding: 5px 20px; font-size: 13px; }
+  .buildpanel .chip { padding: 2px 7px; }
+  .runbar #runMeta { flex: 1 1 320px; font-size: 11.5px; min-width: 0; }
+  .buildpanel .quickbar { background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 7px 0 0; margin: 0; }
+  /* round 169: the gear builder folds (only its head shows) */
+  .gearcard.folded > :not(.cardhead) { display: none; }
+  .gearcard.folded .gbhead > :not(h2):not(.switch):not(.gbfold) { display: none; }
+  .parth { margin: 22px 0 8px; font-size: 13px; color: var(--ink); letter-spacing: .06em; }
+  .charhead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 22px 0 8px; }
+  .charhead .parth { margin: 0; }
+  .presetbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; }
+  .presetbar .qgroup { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+  .presetbar button { padding: 3px 10px; font-size: 12px; }
+  .presetbar { min-width: 0; max-width: 100%; }
+  .presetbar .qgroup { max-width: 100%; }
+  .presetbar select { min-width: 0; width: 300px; max-width: 100%; flex: 1 1 140px; }   /* round 172: fits a phone */
+  .presetbar input[type=text] { width: 200px; max-width: 100%; }
+  .ctlrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; border-top: 1px solid var(--line); padding-top: 7px; }
+  .ctlrow .quickbar { border-top: 0; padding: 0; flex: 0 1 auto; }
+  .ctlrow .tabletools { flex: 1 1 420px; margin: 0; }
+
+  button { font: 600 12.5px var(--sans); border-radius: 4px; padding: 6px 12px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  button:disabled { opacity: .6; cursor: progress; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; font-weight: 500; }
+  .seg button[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); }
+  input:focus-visible, button:focus-visible, summary:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* setup: Stats (always visible, sticky) | tabs for buffs, consumables, fight */
+  .setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 8px; min-width: 0; }
+  .card > h2 { margin: 0; }
+  .statcard { align-content: start; }
+  .sidecard .tabs { margin-top: 0; border-bottom: 0; }
+  .tabrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; border-bottom: 1px solid var(--line); }
+  .cardhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .cardhead h2 { margin: 0; }
+  .resetbtn { padding: 3px 9px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+  .resetbtn.armed { color: var(--bad); border-color: var(--bad); }
+  /* Round 91 (user): the right card is always exactly as tall as the Stats card — height 0 keeps its content out of the
+     row's height, min-height 100% then fills the row — so switching tabs never moves the page. The tabs are laid out
+     in balanced columns to fit; if a tab still does not fit (narrow window) it scrolls inside the card. */
+  .sidecard { height: 0; min-height: 100%; overflow-y: auto; align-content: start; }
+  @media (max-width: 1000px) { .setup { grid-template-columns: minmax(0, 1fr); } .sidecard { height: auto; min-height: 0; overflow-y: visible; } }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 10px; }
+  fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 5px; align-content: start; }
+  legend { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  label.f { display: grid; grid-template-columns: 130px 80px; justify-content: start; align-items: center; gap: 8px; font-size: 12px; }
+  label.c { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .checks { display: grid; gap: 4px; }
+  .checks label.c { align-items: center; }
+  .checks .ico { width: 18px; height: 18px; flex: none; }
+  .checks .cls { font: 600 9.5px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); min-width: 52px; }
+  .checks .eff { color: var(--muted); font-size: 11px; }
+  .hashelp { cursor: help; border-bottom: 1px dotted var(--muted); }
+  /* settings tabs */
+  .tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 10px; border-bottom: 1px solid var(--line); }
+  .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-weight: 500; padding: 6px 10px; margin-bottom: -1px; }
+  .tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tabs .cnt { font: 600 10px var(--mono); color: var(--muted); }
+  .tabs .cnt:empty { display: none; }
+  .pane { padding-top: 10px; display: grid; gap: 8px; }
+  .pane[hidden] { display: none; }
+  /* W8 share code + W13 batch compare */
+  details.toolcard > summary { cursor: pointer; font-weight: 600; font-size: 12.5px; }
+  .toolgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 14px; margin-top: 8px; }
+  .toolpart { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .toolpart h2 { margin: 0; }
+  .toolpart .meta { margin: 0; }
+  textarea, input[type=text] { font: 11.5px var(--mono); padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--sunk); color: var(--ink); width: 100%; min-width: 0; }
+  textarea { resize: vertical; word-break: break-all; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .btnrow input[type=text] { width: 160px; flex: 1 1 140px; }
+  .batchlist { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 12px; }
+  .batchlist li span.meta { display: block; font-size: 11px; }
+  .batchlist button { padding: 1px 7px; font-size: 11px; margin-left: 6px; }
+
+  /* gear builder (round 147): a character window. Under construction: at the bottom with the tape; its final place is
+     the empty anchor #gearTop above the Stats panel. */
+  .gearanchor:empty { display: none; }
+  .gearcard { position: relative; overflow: hidden; grid-template-columns: minmax(0, 1fr); }   /* the tape's long line must not widen it */
+  .gearcard .tape { display: none; }
+  .gearcard.building .tape { display: block; margin: 6px -30px; transform: rotate(-1.3deg); padding: 5px 0;
+    background: repeating-linear-gradient(-45deg, #17140F 0 11px, #F2C200 11px 22px); box-shadow: 0 2px 5px rgba(0, 0, 0, .25); }
+  .tape > div { background: #F2C200; color: #17140F; font: 700 13px/1 var(--mono); letter-spacing: .2em; white-space: nowrap;
+    overflow: hidden; padding: 6px 0; text-align: center; }
+  .tape > div span { margin: 0 14px; }
+  .gbhead { justify-content: flex-start; gap: 8px 16px; }
+  .gbhead .gbclear { margin-left: auto; }
+  .gearcard > .meta { margin: 0; max-width: 100ch; }
+  #gbMsg { color: var(--accent); }
+  #gbMsg:empty { display: none; }
+  .gbdoll { display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr) minmax(0, 230px); grid-template-areas: "l m r" "w w w"; gap: 10px 16px; }
+  #gbLeft { grid-area: l; } #gbMid { grid-area: m; min-width: 0; justify-self: center; width: 100%; max-width: 520px; } #gbRight { grid-area: r; }
+  #gbWeap { grid-area: w; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .gbcol { display: grid; gap: 4px; align-content: start; }
+  .gbslot { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 6px; text-align: left; font-weight: 500; background: var(--sunk); min-width: 0; }
+  .gbslot:hover { border-color: var(--accent); }
+  #gbRight .gbslot { flex-direction: row-reverse; text-align: right; }
+  #gbWeap .gbslot { width: 230px; }
+  .gbico { width: 34px; height: 34px; flex: none; border-radius: 4px; border: 1px dashed var(--line); background: var(--surface); display: grid; place-items: center;
+    font: 600 16px var(--display); color: var(--accent); }
+  .gbslot.full .gbico { border: 1px solid var(--accent); background: var(--accent-soft); }
+  .gbslot.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .gbslot.blocked { opacity: .55; }
+  .gbtxt { display: grid; min-width: 0; }
+  .gbsn { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .gbin { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gbslot:not(.full) .gbin { color: var(--muted); font-style: italic; font-weight: 400; }
+  .gbtab td { font-size: 12px; padding: 2px 5px; }
+  .gbtab td.n { font-family: var(--mono); }
+  .gbtab td.gbsum { font-weight: 600; }
+  #gbMid .meta { margin: 6px 0 0; font-size: 11px; }
+  .gbedit { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 8px; }
+  .gbedit[hidden] { display: none; }
+  .gbedit h3 { margin: 0; font-size: 13px; }
+  .gbedit h4 { margin: 0 0 4px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .gbedit .meta { margin: 6px 0; }
+  .gbedcols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+  .gbown .btnrow input[type=text] { flex: 2 1 200px; }
+  .gbfields { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 4px 16px; margin-top: 6px; }
+  label.f.gbf { grid-template-columns: minmax(0, 1fr) 80px; }
+  .gblist { list-style: none; margin: 6px 0 0; padding: 0; max-height: 360px; overflow: auto; display: grid; gap: 1px; }
+  .gblist button { width: 100%; text-align: left; background: none; border: 0; padding: 3px 4px; }
+  .gbico.img { border: 1px solid var(--line); background-color: #181818; background-repeat: no-repeat; }
+  .gbslot.full .gbico.img { border-color: var(--accent); background-color: #181818; }
+  .gblist .gbhit { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 1px 8px; align-items: center; }
+  .gbhit .gbico { width: 28px; height: 28px; grid-row: span 2; font-size: 13px; }
+  .gbhn { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gbhm { grid-column: 2; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gbhv { grid-column: 3; grid-row: 1 / span 2; font: 600 11.5px var(--mono); color: var(--ink); text-align: right; }
+  .gbhitsum { margin: 6px 0 0; font-size: 11px; }
+  /* round 157: filters, favourites, compare, warnings, gear sets */
+  .gbfilt { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin-top: 6px; font-size: 12px; }
+  .gbfilt input[type=number] { width: 58px; }
+  .gbfilt select { max-width: 170px; }
+  .gblist .gbhitli { display: flex; align-items: center; gap: 2px; }
+  .gblist .gbhitli .gbhit { flex: 1 1 auto; min-width: 0; }
+  .gblist .gbstar, .gblist .gbcmpb { flex: none; width: 26px; height: 26px; padding: 0; text-align: center; background: none; border: 0; color: var(--muted); font-size: 14px; }
+  .gblist .gbstar.on { color: #e3b23c; }
+  .gblist .gbstar:hover, .gblist .gbcmpb:hover { color: var(--accent); background: var(--sunk); }
+  .gbwarn { color: #e3b23c; }
+  .gbopt { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+  .gbopt summary { font-weight: 600; cursor: pointer; }
+  .gbotab td { padding: 3px 6px; vertical-align: top; font-size: 12px; }
+  .gbotab td:first-child { white-space: nowrap; color: var(--muted); }
+  .gboc { display: inline-flex; margin-right: 10px; }
+  .gbsets { margin-top: 6px; }
+  .gbsets select { max-width: 220px; }
+  .gbsets input[type=text] { flex: 1 1 160px; }
+  .gblist button:hover { background: var(--sunk); }
+  .gbnote { margin: 0; color: var(--accent); }
+  /* round 148: item value, enchants, compare, gear code */
+  .gbhead label.c select { max-width: 220px; }
+  .gbval { text-transform: none; letter-spacing: 0; color: var(--accent); font-weight: 600; margin-left: 4px; }
+  .gben { font-size: 10.5px; color: var(--good); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #gbMid .gbtot { color: var(--ink); font-size: 12px; }
+  .gbcode input[type=text] { flex: 3 1 260px; }
+  .gbench { border-top: 1px dashed var(--line); padding-top: 6px; }
+  .gbench > summary { cursor: pointer; font-weight: 600; font-size: 12px; color: var(--accent); }
+  .gbench[open] > summary { margin-bottom: 6px; }
+  .gbvalline { color: var(--accent); }
+  .gbvalline:empty, #gbEnchVal:empty { display: none; }
+  #gbCmp:empty { display: none; }
+  #gbCmp { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+  .gbcmpt td { font-size: 12px; }
+  /* round 148: talents that are not (fully) simulated */
+  .tcell .sim { position: absolute; left: -6px; top: -5px; min-width: 13px; height: 13px; padding: 0 2px; border-radius: 7px; font: 700 9px/11px var(--mono);
+    text-align: center; background: var(--surface); color: var(--muted); border: 1px solid var(--line); cursor: help; }
+  .tcell .sim.none { color: var(--bad); border-color: var(--bad); }
+  .tcell .sim.part { color: var(--c-crit); border-color: var(--c-crit); }
+  .tcell .sim.cond { color: var(--c-hit); border-color: var(--c-hit); }
+  .simkey .sim { position: static; display: inline-block; margin: 0 3px 0 8px; }
+  .pttab .sim, .simkey .sim { min-width: 13px; height: 13px; padding: 0 2px; border-radius: 7px; font: 700 9px/11px var(--mono); text-align: center; background: var(--surface); border: 1px solid var(--line); margin-left: 6px; display: inline-block; }
+  .pttab .sim.none, .simkey .sim.none { color: var(--bad); border-color: var(--bad); }
+  .pttab .sim.part, .simkey .sim.part { color: var(--c-crit); border-color: var(--c-crit); }
+  .pttab .sim.cond, .simkey .sim.cond { color: var(--c-hit); border-color: var(--c-hit); }
+  /* round 148: talent point values, buff values */
+  .ptbox { display: grid; gap: 6px; }
+  .ptbox.old > :not(.qold) { opacity: .45; }
+  .ptbox h3, #chOut h3 { margin: 4px 0 2px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .ptbox h3 .meta { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; }
+  .ptbox .meta { margin: 0; }
+  .pttab td { font-size: 12px; padding: 2px 5px; }
+  .pttab td.ptname { white-space: nowrap; }
+  .pttab .ico { width: 16px; height: 16px; }
+  .ptbar, .bvbar { display: block; height: 8px; min-width: 60px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+  .ptbar i, .bvbar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+  .ptbar i.neg, .bvbar i.neg { background: var(--bad); }
+  .bvlist { display: grid; grid-template-columns: 20px minmax(0, 340px) minmax(60px, 1fr) 90px 62px; gap: 3px 10px; align-items: center; font-size: 12px; max-width: 1000px; }
+  .bvlist .ico { width: 18px; height: 18px; }
+  .bvname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bvv { font-weight: 600; }
+  @media (max-width: 600px) { .bvlist { grid-template-columns: 20px minmax(0, 1fr) auto; } .bvlist .bvbar, .bvlist .bvv + .meta { display: none; } .bvname { white-space: normal; } }
+  .gbnote[hidden] { display: none; }
+  @media (max-width: 760px) {
+    .gbdoll { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "l r" "w w" "m m"; }
+    .gbedcols { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .gbdoll { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "r" "w" "m"; }
+    #gbRight .gbslot { flex-direction: row; text-align: left; }
+    #gbWeap .gbslot { width: 100%; }
+  }
+  .batchout td { font-size: 11.5px; }
+  /* W7 build editor */
+  details#editor > summary { cursor: pointer; font-weight: 600; font-size: 12.5px; }
+  details.card { display: block; }                  /* grid on <details> puts the content box in a non-shrinking grid track */
+  details.card > * + * { margin-top: 8px; }
+  details.card > * { min-width: 0; }
+  select { max-width: 100%; }
+  .btnrow > * { min-width: 0; }
+  .btnrow select { flex: 1 1 160px; }
+  .edtop label.c { max-width: 100%; min-width: 0; }
+  .edtop label.c select { min-width: 0; flex: 1 1 auto; }
+  .edtop { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 8px; }
+  .edtop input[type=text] { width: 150px; }
+  #edTrees .tcell { cursor: pointer; }
+  #edTrees .thead .treereset { margin-left: auto; padding: 1px 7px; font-size: 11px; font-weight: 500; color: var(--muted); }
+  #edTrees .tcell .ico { cursor: pointer; }
+  .edcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+  .edcols h2 { margin: 0 0 6px; }
+  .edrot { margin: 0 0 6px; padding-left: 22px; display: grid; gap: 3px; font-size: 12px; }
+  .edrot li { display: flex; align-items: center; gap: 6px; }
+  .edrot li .lbl { flex: 1; min-width: 0; }
+  .edrot .pnum { width: 52px; padding: 1px 4px; margin: 0 2px; font: 600 12px var(--mono, ui-monospace, Consolas, monospace); text-align: right; }
+  .edrot .pnum.bad { border-color: var(--bad); color: var(--bad); }
+  .edrot button { padding: 1px 6px; font-size: 11px; }
+  .ederrs { margin: 0; padding-left: 18px; font-size: 12px; color: var(--bad); display: grid; gap: 2px; }
+  .ederrs li.ok { color: var(--good); list-style: none; margin-left: -18px; }
+  .ctag { font: 600 9.5px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--c-crit); border: 1px solid var(--c-crit); border-radius: 3px; padding: 0 3px; margin-left: 4px; }
+  .ctag.t-affliction { color: var(--c-sp); border-color: var(--c-sp); }            /* best build per tree (always shown) */
+  .ctag.t-demonology { color: var(--c-pierce); border-color: var(--c-pierce); }
+  .ctag.t-destruction { color: var(--c-haste); border-color: var(--c-haste); }
+  #results > tbody > tr.baserow > td { color: var(--muted); }                      /* "No race" baseline rows */
+  #results > tbody > tr.baserow .dps b { font-weight: 500; }
+  .norace { display: inline-block; width: 22px; text-align: center; color: var(--muted); font: 600 13px var(--mono); }
+  .batchout td .meta { font-size: 10.5px; }
+  .batchout:empty { display: none; }
+  .pane > .meta { margin: 0; max-width: 90ch; }
+  select { font: 12px var(--sans); padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--sunk); color: var(--ink); }
+  .totbar { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  table.tot { width: 100%; min-width: 480px; }
+  table.tot td { font-size: 12px; }
+  table.tot td.src { color: var(--muted); font-size: 11px; }
+  table.tot td.up { color: var(--good); font-weight: 600; }
+  table.tot td.gin { padding: 2px 5px; }
+  table.tot td.gin input { width: 76px; text-align: right; padding: 2px 5px; }
+  table.tot td.tv { font-weight: 600; }
+  .bufgrid { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); margin-top: 4px; }
+  table.tot td.stat b { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; background: var(--c, var(--line)); }
+  /* balanced columns instead of a row grid: no dead space next to short groups (round 91) */
+  .congrid { columns: 2 190px; column-gap: 18px; }
+  .cgroup { display: grid; gap: 2px; align-content: start; break-inside: avoid; margin-bottom: 8px; }
+  .fcols { columns: 3 140px; column-gap: 16px; margin-top: 4px; }
+  .fcols label.f { grid-template-columns: minmax(0, 130px) minmax(56px, 80px); }
+  .fcols > fieldset { break-inside: avoid; margin-bottom: 12px; }
+  .cgroup.off label { opacity: .5; }
+  .cgroup .reqnote { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--c-crit); }
+  .cgroup:not(.off) .reqnote { display: none; }
+  .cgroup h3 { margin: 0 0 2px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  input[type=number] { width: 100%; font: 12.5px var(--mono); padding: 3px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--sunk); color: var(--ink); }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 600; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 5px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th.w { text-align: right; color: var(--c); }
+  td { padding: 4px 5px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #results > tbody > tr.row > td { font-size: 11.5px; }   /* builds list (user round 12: smaller) */
+  #results > thead > tr > th, #results > tbody > tr.row > td { padding-left: 4px; padding-right: 4px; }   /* round 29: narrower page */
+  #results .dps b { font-size: 12.5px; }
+  tr.row { cursor: pointer; }
+  tr.row:hover > td { background: var(--sunk); }
+  tr.row.open > td { background: var(--accent-soft); }
+  .bname { font-weight: 600; white-space: nowrap; }
+  .bname .split { font-family: var(--mono); color: var(--accent); font-weight: 600; margin-right: 6px; }
+  .bname .bsub { display: block; font-weight: 400; font-size: 10.5px; color: var(--muted); }   /* race + tags on a second line (round 29) */
+  th .sub { display: block; font-size: 8.5px; letter-spacing: .03em; text-transform: none; font-weight: 500; }
+  th.wrap2 { white-space: normal; }
+  td.basecell { font-size: 10px; }
+  /* max-width: none — the published page's wrapper sets img { max-width: 100% }, which let the sacrificed-pet icon's
+     wrapper shrink to 2 px wide inside the flex row (round 31). Icons are fixed-size and never scale. */
+  .ico { width: 19px; height: 19px; max-width: none; border-radius: 3px; vertical-align: middle; display: inline-block; border: 1px solid var(--line); }
+  .ico.lg { width: 22px; height: 22px; }
+  .icons { display: flex; gap: 2px; flex-wrap: nowrap; align-items: center; }
+  .icons > * { flex: none; }                        /* icons never shrink: the column grows to fit the whole priority list */
+  #results td:has(> .icons) { padding-right: 14px; } /* keep the DPS column clear of the last priority icon */
+  .pets { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+  .pets > * { flex: none; }
+  .sac { position: relative; display: inline-block; }
+  .sac img { filter: grayscale(1) brightness(.8); opacity: .75; }
+  .sac::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--bad); transform: rotate(45deg); }
+  .none { color: var(--muted); font-size: 12px; }
+  .dps b { font: 600 13.5px var(--mono); }
+  .dps .med { display: block; font-size: 10px; color: var(--muted); }
+  .dps .err { display: block; font: 10px var(--mono); color: var(--muted); }
+  /* W4 uptimes, W6 histogram, W5 timeline */
+  .uptime { display: grid; grid-template-columns: minmax(0, auto) minmax(60px, 1fr) auto; gap: 3px 8px; align-items: center; font-size: 12px; }
+  .uptime .uhead { grid-column: 1 / -1; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 4px; }
+  .uptime .ulabel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .uptime .ulabel .ico { width: 16px; height: 16px; }
+  .ubar { height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+  .ubar span { display: block; height: 100%; background: var(--accent); }
+  svg.hist { width: 100%; max-width: 420px; height: auto; display: block; }
+  .hbar { fill: var(--accent); opacity: .75; }
+  .hmean { stroke: var(--c-crit); stroke-width: 2; }
+  .hlab { fill: var(--muted); font: 10px var(--mono); }
+  .mline { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .mline.pet { stroke: var(--c-hit); stroke-dasharray: 4 3; }
+  .tl-wrap { display: flex; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); max-height: 460px; overflow-y: auto; }
+  .tl-labels { flex: none; width: 190px; padding-left: 6px; border-right: 1px solid var(--line); font-size: 11px; }
+  .tl-labels > div { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tl-labels .ico { width: 14px; height: 14px; }
+  .tl-scroll { overflow-x: auto; flex: 1; min-width: 0; }
+  svg.tl { display: block; }
+  .tlgrid { stroke: var(--line); stroke-width: 1; }
+  /* boss health lane + execute marker (round 34) */
+  .hp-ok { fill: var(--c-hit); opacity: .45; }
+  .hp-ex { fill: var(--bad); opacity: .6; }
+  .exline { stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .hptxt { font: 600 9.5px var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .tl-labels .hplab { font-weight: 600; }
+  @media (max-width: 600px) { .tl-labels { width: 110px; } }
+  .splitbar { display: flex; height: 16px; width: 100%; min-width: 170px; border-radius: 3px; overflow: hidden; background: var(--sunk); }
+  .splitbar span { display: flex; align-items: center; justify-content: center; height: 100%; overflow: hidden; font: 600 9.5px var(--mono); letter-spacing: -.02em; white-space: nowrap; }
+  .delta { font-weight: 600; }
+  .delta.best { color: var(--good); }
+  .delta.neg { color: var(--bad); }
+  td.wt { text-align: right; font: 500 12px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--c); }
+  td.wt.top { font-weight: 700; text-decoration: underline 2px; text-underline-offset: 3px; }
+
+  .detail > td { background: var(--ground); padding: 14px 10px; cursor: default; }
+  .dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+  .dgrid .wide { grid-column: 1 / -1; }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; }
+  .kv .n { text-align: right; }
+  .tal { font-size: 12px; color: var(--muted); }
+  .trees { display: flex; flex-wrap: wrap; gap: 18px; }
+  .tree { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .thead { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .tgrid { display: grid; grid-template-columns: repeat(4, 34px); grid-template-rows: repeat(7, 34px); gap: 6px 8px; }
+  .tcell { position: relative; }
+  .tcell .ico { width: 32px; height: 32px; border-width: 2px; }
+  .tcell.max .ico { border-color: var(--c-crit); }
+  .tcell.part .ico { border-color: var(--good); }
+  .tcell.off .ico { filter: grayscale(1); opacity: .35; }
+  .tcell .rk { position: absolute; right: -6px; bottom: -4px; font: 600 9px var(--mono); padding: 0 3px; border-radius: 3px; background: var(--ink); color: var(--surface); }
+  .tcell.off .rk { background: var(--sunk); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }   /* round 84: 0/N shown, muted */
+  .ico[data-tip] { cursor: help; }
+  #tip { position: fixed; z-index: 50; max-width: 320px; pointer-events: none; background: var(--surface); color: var(--ink);
+         border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.4;
+         box-shadow: 0 6px 20px rgba(0,0,0,.28); }
+  #tip hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+  #tip .tt-name { font-weight: 600; font-size: 13px; color: var(--accent); }
+  #tip .tt-meta { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  #tip .tt-body { color: var(--ink); }
+  #tip .tt-dim { color: var(--muted); }
+  #tip .tt-next { margin-top: 6px; font-size: 11px; color: var(--c-crit); }
+  #tip .tt-rule { margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--line); font-size: 11px; color: var(--good); }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .log { max-height: 400px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+  .log td, .log th { padding: 2px 8px; font-size: 11.5px; }
+  .log th { position: sticky; top: 0; background: var(--surface); }
+  .log tr.cast td { font-weight: 600; }
+  .log tr.minor td { color: var(--muted); }
+  .crit { color: var(--c-crit); font-weight: 600; }
+  .vuln { display: block; font: 600 10px var(--mono); color: var(--c-pierce); }
+  .resisted { display: block; font: 600 10px var(--mono); color: var(--bad); }
+  .bd summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .foot { color: var(--muted); font-size: 11.5px; }
+  /* ---------- round 44 ---------- */
+  /* out-of-date results */
+  .stale { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 8px;
+           padding: 7px 10px; border-radius: 4px; border: 1px solid var(--c-crit); background: var(--sunk); font-size: 12px; }
+  .stale[hidden] { display: none; }
+  .stale b { color: var(--c-crit); }
+  #results.old > tbody { opacity: .5; transition: opacity .2s; }
+  /* one row per build; the other races underneath */
+  .racecell { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; white-space: nowrap; }
+  .racecell > * { flex: none; }
+  /* race toggle (round 82): a labelled pill instead of the bare "▸ 5" chip */
+  .rtog { display: inline-flex; align-items: center; gap: 3px; padding: 0 7px 0 8px; font: 600 11px var(--sans); line-height: 20px;
+          color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; min-width: 70px; justify-content: center; }
+  .rtog:hover { background: var(--accent); color: var(--surface); }
+  .rtog .chev { width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); }
+  .rtog[aria-expanded=true] { background: var(--surface); }
+  .rtog[aria-expanded=true]:hover { background: var(--accent); }
+  .rtog[aria-expanded=true] .chev { transform: translateY(1px) rotate(-135deg); }
+  .tabletools { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; cursor: pointer; user-select: none; }
+  .switch input { appearance: none; -webkit-appearance: none; margin: 0; width: 30px; height: 17px; border-radius: 9px; background: var(--line);
+                  position: relative; cursor: pointer; transition: background .15s; flex: none; }
+  .switch input::after { content: ""; position: absolute; left: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--surface);
+                         transition: left .15s; }
+  .switch input:checked { background: var(--accent); }
+  .switch input:checked::after { left: 15px; }
+  .switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #results > tbody > tr.racerow > td { font-size: 11px; background: var(--ground); }
+  #results > tbody > tr.racerow:hover > td { background: var(--sunk); }
+  #results > tbody > tr.racerow.open > td { background: var(--accent-soft); }
+  #results .rname { padding-left: 22px; font-weight: 600; white-space: nowrap; }
+  #results .rname .meta { font-weight: 400; font-size: 10.5px; }
+  #results .rvs { font-size: 10.5px; white-space: nowrap; }
+  #results tr.racerow .dps b { font-size: 11.5px; }
+  /* run / boss / pet settings in Fight & pets (a folded "Advanced" block until round 88) */
+  /* custom cooldown timeline (round 92): one lane per cooldown, under the two columns of the Fight & pets tab */
+  .cdbox { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .cdhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; }
+  .cdhead label.c { flex-wrap: wrap; gap: 4px 8px; }
+  .cdhead select { max-width: 100%; }
+  .cdtl { display: grid; gap: 4px; --tape: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-crit) 60%, transparent) 0 5px, transparent 5px 10px); }
+  .cdtl[hidden] { display: none; }
+  .cdgrid { display: grid; grid-template-columns: minmax(104px, 176px) minmax(0, 1fr); gap: 2px 8px; align-items: center; }
+  .cdrow { display: flex; align-items: center; gap: 5px; min-width: 0; }
+  .cdrow input, .cdnobox { flex: none; width: 13px; height: 13px; margin: 0; }
+  /* racial row (round 95): link button + one button per race; the row shows the picked race's racial */
+  .cdlink { flex: none; width: 13px; height: 13px; padding: 0; border-radius: 3px; font: 600 10px/11px var(--mono); color: var(--muted); background: none; }
+  .cdlink[aria-pressed=true] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .cdraces { display: inline-flex; gap: 1px; flex: none; }
+  .cdrace { position: relative; width: 18px; height: 18px; padding: 0; border: 1px solid transparent; border-radius: 3px; background: none; display: inline-flex; align-items: center; justify-content: center; }
+  .cdrace .ico { width: 14px; height: 14px; filter: grayscale(1); opacity: .5; }
+  .cdrace.on { border-color: var(--accent); }
+  .cdrace.on .ico { filter: none; opacity: 1; }
+  .cdrace.has::after { content: ""; position: absolute; right: -1px; top: -1px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .cdrow.off .cdname { color: var(--muted); }
+  .cdrow.off .cdname .ico { filter: grayscale(1); opacity: .5; }
+  .cdname { display: flex; align-items: center; gap: 5px; padding: 0; border: 0; background: none; border-radius: 3px; font: 500 11.5px var(--sans); color: var(--ink);
+            text-align: left; min-width: 0; cursor: grab; touch-action: none; }
+  .cdname .ico { width: 16px; height: 16px; flex: none; }
+  .cdname span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cdlane { position: relative; height: 18px; background: var(--ground); border: 1px solid var(--line); border-radius: 4px; cursor: crosshair; overflow: hidden; touch-action: none; }
+  .cdauto { position: absolute; left: 6px; top: 1px; font-size: 10.5px; color: var(--muted); pointer-events: none; white-space: nowrap; }
+  .cdblk { position: absolute; top: 0; height: 14px; min-width: 7px; box-sizing: border-box; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 3px;
+           color: var(--accent); font: 600 10px/12px var(--mono); padding: 0 3px; white-space: nowrap; overflow: hidden; cursor: grab; touch-action: none; }
+  .cdblk.sel { background: var(--accent); color: var(--surface); }
+  .cdblk.snap { border-style: dashed; }               /* follows the execute phase / the Doom explosion (round 120) */
+  .cdedit .resetbtn[aria-pressed=true] { color: var(--accent); border-color: var(--accent); }
+  .cdblk.bad { border-color: var(--bad); color: var(--bad); }
+  .cdblk.bad.sel { background: var(--bad); color: var(--surface); }
+  /* switched off (round 93): the whole bar is greyed, placed uses stay but do nothing */
+  .cdlane.off { background: var(--sunk); }
+  .cdlane.off > * { filter: grayscale(1); opacity: .45; }
+  .cdlane.off .cdauto { opacity: 1; }
+  .cdcool { position: absolute; bottom: 0; height: 3px; background: var(--bad); pointer-events: none; }
+  .cdghost { position: absolute; top: 0; height: 14px; box-sizing: border-box; border: 1px dashed var(--muted); border-radius: 3px; color: var(--muted);
+             font: 500 10px/12px var(--sans); padding: 0 3px; pointer-events: none; overflow: hidden; white-space: nowrap; }
+  .cdmark { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--muted); pointer-events: none; }
+  .cdend { position: absolute; top: 0; bottom: 0; right: 0; background: var(--tape); border-left: 1px solid var(--c-crit); pointer-events: none; }
+  .cdaxis { position: relative; height: 25px; font: 10px var(--mono); color: var(--muted); }
+  .cdaxis b { position: absolute; top: 0; transform: translateX(-50%); font-weight: 400; white-space: nowrap; }
+  .cdaxis b:first-child { transform: none; }
+  .cdaxis i { position: absolute; top: 12px; font-style: normal; font-family: var(--sans); font-size: 10.5px; white-space: nowrap; }
+  .cdaxis i.l { transform: translateX(-100%); padding-right: 3px; }
+  .cdaxis i.r { padding-left: 3px; }
+  .cdaxis i.end { top: 0; right: 0; color: var(--c-crit); }
+  .cdfoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; font-size: 11px; color: var(--muted); min-height: 24px; }
+  .cdedit { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
+  .cdedit input { width: 58px; }
+  .cdkey { display: inline-flex; flex-wrap: wrap; gap: 3px 10px; }
+  .cdkey span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .cdkey u { display: inline-block; width: 16px; height: 9px; border-radius: 2px; box-sizing: border-box; text-decoration: none; }
+  .cdkey .k1 { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .cdkey .k2 { height: 3px; background: var(--bad); }
+  .cdkey .k3 { border: 1px dashed var(--muted); }
+  .cdkey .k4 { width: 22px; background: var(--tape); border: 1px solid var(--c-crit); }
+  @media (max-width: 520px) { .cdgrid { grid-template-columns: 40px minmax(0, 1fr); gap: 2px 6px; } .cdname span { display: none; }   /* phones: checkbox + icon, wider lanes */
+    .cdrow.racial, .cdlane.racial { grid-column: 1 / -1; } .cdrow.racial .cdname span { display: inline; } }                       /* racial row: switcher above its lane */
+  /* gear sets */
+  .gearrow label.c select { max-width: 260px; }
+  .gearrow input[type=text] { flex: 1 1 150px; width: 150px; }
+  .gearrow .meta { flex-basis: 100%; }
+  .gearrow .meta:empty { display: none; }
+  /* details actions, stat weights */
+  .dactions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wkv .n .meta { font-size: 11px; }
+  /* build editor: drag and drop, quick sim */
+  .edrot li[draggable=true] { cursor: grab; border-radius: 3px; border-top: 2px solid transparent; border-bottom: 2px solid transparent; }
+  .edrot li.dragging { opacity: .45; }
+  .edrot li.dropabove { border-top-color: var(--accent); }
+  .edrot li.dropbelow { border-bottom-color: var(--accent); }
+  .edrot .grip { color: var(--muted); font-size: 13px; line-height: 1; user-select: none; }
+  .quick { border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; background: var(--sunk); display: grid; gap: 3px; font-size: 12px; }
+  .quick .big { font: 600 14px var(--mono); }
+  /* DoT chart */
+  .dotchart { display: grid; grid-template-columns: minmax(120px, 190px) minmax(160px, 1fr) repeat(4, auto); gap: 5px 10px; align-items: center; font-size: 11.5px; }
+  .dotchart .dh { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); text-align: right; white-space: nowrap; }
+  .daxis { position: relative; height: 14px; }
+  .daxis span { position: absolute; transform: translateX(-50%); font: 10px var(--mono); color: var(--muted); }
+  .daxis span:first-child { transform: none; }
+  .dlabel { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .dlabel .ico { width: 16px; height: 16px; }
+  .dtrack { position: relative; height: 22px; background: var(--sunk); border-radius: 3px; }
+  .dtrack > * { position: absolute; display: block; }
+  .dtrack b { top: 3px; height: 11px; border-radius: 2px; opacity: .9; }
+  .dtrack u { top: 3px; height: 11px; background: repeating-linear-gradient(45deg, var(--bad) 0 3px, transparent 3px 6px); opacity: .55; text-decoration: none; }
+  .dtrack u.endgap { opacity: .2; }
+  .dtrack s { top: 15px; width: 1px; height: 5px; background: var(--ink); opacity: .55; text-decoration: none; }
+  .dtrack s.crit { top: 13px; height: 8px; width: 2px; background: var(--c-crit); opacity: 1; }
+  .dtrack i { top: -1px; width: 0; height: 0; margin-left: -4px; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 6px solid var(--ink); }
+  .dtrack i.early { border-bottom-color: var(--c-crit); }
+  .dtrack em { top: 0; bottom: 0; width: 0; border-left: 1.5px dashed var(--bad); }
+  @media (max-width: 700px) { .dotchart { grid-template-columns: minmax(90px, 120px) minmax(120px, 1fr) auto; } .dotchart > .dh:nth-of-type(n+2), .dotchart > span.n:not(:nth-child(6n+3)) { display: none; } }
+  /* compare two builds */
+  .cmpbar label.c { flex: 1 1 260px; min-width: 0; }
+  .cmpbar label.c select { flex: 1 1 auto; min-width: 0; width: 100%; max-width: 420px; }
+  .cmpgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 14px; margin-top: 8px; }
+  .cmpgrid .wide { grid-column: 1 / -1; }
+  .cmphead { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 10px; }
+  .cmphead > div { background: var(--sunk); border-radius: 4px; padding: 8px 10px; }
+  .cmphead h2 { margin: 0 0 2px; }
+  .cmphead .bname { white-space: normal; }
+  .cmpt td { font-size: 12px; }
+  .cmpt td.more { color: var(--good); font-weight: 600; }
+  .cmp2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px; }
+  .cmprot { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 2px; font-size: 12px; }
+  .cmprot li.only { background: var(--accent-soft); border-radius: 3px; }
+  .ctag.snap { color: var(--c-hit); border-color: var(--c-hit); }
+  /* pin button left of the rank (round 66): keeps a build shown whatever the display cut-off */
+  #results td.rankcell { white-space: nowrap; }
+  .pinbtn { padding: 1px 3px; margin-right: 3px; border: 1px solid transparent; background: none; color: var(--line); line-height: 0; vertical-align: -1px; }
+  .pinbtn:hover { color: var(--muted); border-color: var(--line); }
+  .pinbtn[aria-pressed=true] { color: var(--accent); }
+  /* ---------- round 45: details layout, DPS bar ---------- */
+  .dgrid { grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 12px; }
+  .dgrid > div:not(.dactions) { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+  .dgrid > .dactions { padding: 0; }
+  .dgrid h2 { margin-bottom: 8px; }
+  .dgrid .kv { gap: 3px 12px; }
+  .dgrid .tree { background: var(--ground); }
+  .stattab td { font-size: 12px; vertical-align: top; }
+  .stattab td.n { width: 80px; }
+  .stattab td:first-child { white-space: nowrap; }
+  .stattab .srcs { color: var(--muted); font-size: 11.5px; }
+  .stattab .src { display: inline-block; margin-right: 12px; white-space: nowrap; }
+  .stattab .src b { color: var(--ink); font-weight: 600; font-family: var(--mono); }
+  ol.prio { margin: 0; padding-left: 20px; font-size: 12px; display: grid; gap: 2px; }
+  .notes { margin: 6px 0 0; max-width: 110ch; }
+  .dbar { display: block; height: 3px; margin-top: 2px; border-radius: 2px; background: var(--sunk); overflow: hidden; min-width: 44px; }
+  .dbar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  tr.racerow .dbar i { background: var(--muted); }
+  /* priority & damage (round 45) */
+  .pdrow { display: flex; align-items: flex-start; gap: 3px; flex-wrap: nowrap; }
+  .pd { flex: none; display: flex; flex-direction: column; align-items: center; width: 24px; gap: 1px; }
+  .pd .ico { width: 20px; height: 20px; }
+  .pd .pbar { display: block; width: 20px; height: 3px; border-radius: 2px; background: var(--sunk); overflow: hidden; }
+  .pd .pbar b { display: block; height: 100%; border-radius: 2px; }
+  .pd .pct { font: 600 9px var(--mono); color: var(--muted); line-height: 1; letter-spacing: -.03em; }
+  .pdsep { flex: none; align-self: stretch; width: 1px; background: var(--line); margin: 0 3px; }
+  /* round 46: the Warlock part is 8 slots wide (24 px + 3 px gap), so the pet part lines up in every row */
+  .pdown { flex: none; display: flex; align-items: flex-start; gap: 3px; min-width: calc(8 * 24px + 7 * 3px); }
+  /* Bane of Doom / Bane of Agony in one diagonally split icon (Doom top left, Agony bottom right) */
+  .ico2 { position: relative; overflow: hidden; display: inline-block; flex: none; }
+  .ico2 img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; display: block; }
+  .ico2 img.cut { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+  .ico2::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to top left, transparent calc(50% - .75px), var(--surface) 50%, transparent calc(50% + .75px)); }
+  .pbarin { display: flex; height: 100%; border-radius: 2px; overflow: hidden; }
+  .pbarin b { border-radius: 0; }
+  #results td:has(> .pdrow) { padding-right: 12px; }
+  /* fight timeline editor (round 70) */
+  .tlon { margin-top: 4px; font-weight: 600; }
+  .tlbox { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--ground); display: grid; gap: 6px; }
+  .tlbox[hidden] { display: none; }
+  .tlpals { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tlpal { cursor: grab; line-height: 0; border-radius: 4px; }
+  .tlpal .ico { width: 26px; height: 26px; }
+  .tlscroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+  .tllane { position: relative; height: 58px; }
+  .tlaxis { position: absolute; left: 0; right: 0; top: 0; height: 16px; border-bottom: 1px solid var(--line); }
+  .tltick { position: absolute; top: 0; height: 16px; border-left: 1px solid var(--line); padding-left: 2px; font: 9.5px var(--mono); color: var(--muted); }
+  .tltick.major { border-left-color: var(--muted); }
+  .tlrow { position: absolute; left: 0; right: 0; top: 20px; height: 34px; }
+  .tlblk { position: absolute; top: 2px; height: 30px; display: flex; align-items: center; padding-left: 2px; overflow: hidden; cursor: grab;
+           background: color-mix(in srgb, var(--c) 35%, var(--surface)); border: 1px solid var(--c); border-radius: 3px; box-sizing: border-box; }
+  .tlblk .ico { width: 22px; height: 22px; }
+  .tlblk.sel { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 2; }
+  .tlblk.bad { border: 2px solid var(--bad); }
+  .tlblk.late { opacity: .45; }
+  .tlsel input[type=number] { width: 70px; }
+  /* ---------- round 110 (user feedback) ---------- */
+  [hidden] { display: none !important; }
+  /* quick setup: gear and buffs / consumables presets, always in view */
+  .quickbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  .quickbar .qlabel { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  .quickbar .qgroup { display: inline-flex; align-items: center; gap: 6px; }
+  .quickbar .seg button { padding: 3px 10px; font-size: 12px; }
+  .quickbar .seg button[aria-pressed=true] { font-weight: 600; }
+  /* presets in the same bar (round 115): they replaced the gear-set row of the Stats card */
+  .quickbar .qsep { width: 1px; align-self: stretch; background: var(--line); }
+  .quickbar > .qgroup > button { padding: 3px 10px; font-size: 12px; }
+  .quickbar select { max-width: min(300px, 100%); }
+  .quickbar input[type=text] { width: 200px; max-width: 100%; }
+  .quickbar .qgroup { flex-wrap: wrap; min-width: 0; }
+  #quickMsg { flex-basis: 100%; }
+  #quickMsg:empty { display: none; }
+  .cmpverdict { background: var(--sunk); border-radius: 4px; padding: 8px 10px; }
+  /* ---------- round 116: steps hint, Advanced fold, race picker ---------- */
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; color: var(--muted); }
+  .steps li { display: inline-flex; align-items: center; gap: 6px; }
+  .steps b { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--surface); font: 700 11px/18px var(--mono); text-align: center; }
+  .steps em { font-style: normal; font-weight: 600; color: var(--accent); }
+  .adv > summary { cursor: pointer; font-weight: 600; font-size: 12px; color: var(--accent); }
+  .adv > summary .meta { font-weight: 400; }
+  .adv[open] > summary { margin-bottom: 8px; }
+  .tabletools label.c select { font-weight: 600; }
+  .tabletools #moveNote { margin-left: 4px; }
+  .cmpverdict p { margin: 0; }
+  .cmpverdict p + p { margin-top: 4px; }
+  /* DPS numbers stand out */
+  #results > thead th.dpsh { color: var(--accent); }
+  #results > tbody > tr.row:not(.racerow) > td.dps b { font-size: 15.5px; font-weight: 700; color: var(--accent); letter-spacing: -.01em; }
+  #results > tbody > tr.racerow > td.dps b { font-size: 12.5px; font-weight: 600; }
+  #results > tbody > tr.baserow > td.dps b { font-weight: 500; }
+  .dbar { height: 4px; }
+  /* rank arrows: places gained / lost since the previous run */
+  .mv { font: 600 10px var(--mono); margin-left: 3px; }
+  .refd { display: block; font: 600 10px var(--mono); }                 /* round 157: change vs the reference run */
+  .wsel span { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+  .wsel label { font-weight: 400; display: inline-flex; gap: 4px; align-items: center; }
+  .tl-mana { fill: var(--c-hit); opacity: .35; }
+  .tl-gcd { fill: var(--muted); opacity: .7; }
+  .tlopts { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -2px 0 6px; font-size: 12px; }
+  /* round 177: damage bars by school; talent trees in their own colour */
+  td.dmgcell { min-width: 150px; white-space: nowrap; }
+  .dmgbar { display: inline-block; vertical-align: middle; width: 110px; height: 9px; border-radius: 3px; background: var(--sunk); overflow: hidden; margin-right: 6px; }
+  .dmgbar i { display: block; height: 100%; border-radius: 3px; }
+  .tree.t-affliction { --tr: var(--tr-affliction); } .tree.t-demonology { --tr: var(--tr-demonology); } .tree.t-destruction { --tr: var(--tr-destruction); }
+  .tree[class*="t-"] { background: linear-gradient(170deg, rgba(var(--tr), .26), rgba(var(--tr), .06) 55%, rgba(var(--tr), .14)), var(--surface); border-color: rgba(var(--tr), .55); }
+  .tree[class*="t-"] .thead b { color: rgb(var(--tr)); }
+  /* round 177: the welcome tour */
+  .tourspot { position: fixed; z-index: 70; border-radius: 8px; box-shadow: 0 0 0 3px var(--accent), 0 0 0 9999px rgba(8, 6, 14, .6); pointer-events: none; transition: all .2s; }
+  .tourspot[hidden], .tourcard[hidden] { display: none; }
+  .tourcard { position: fixed; z-index: 71; width: min(380px, calc(100vw - 24px)); background: var(--surface); color: var(--ink); border: 1px solid var(--accent);
+              border-radius: 8px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); display: grid; gap: 8px; }
+  .tourcard.center { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); }
+  .tourhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .tourhead b { font: 600 15px var(--display); }
+  .tourcard p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+  .tourcard .tourgap { flex: 1; }
+  /* round 177: buffs and debuffs as compact tiles; consumables as slots */
+  #buffBoxes, #debuffBoxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 3px 6px; }
+  .btile { position: relative; display: flex; align-items: center; gap: 6px; padding: 3px 6px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; min-width: 0; }
+  .btile > input[type=checkbox] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+  .btile .ico { width: 20px; height: 20px; flex: none; cursor: pointer; }
+  .btile .btn2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btile:hover { background: var(--sunk); }
+  .btile:has(> input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .btile:not(:has(> input:checked)) { color: var(--muted); }
+  .btile:not(:has(> input:checked)) .ico { filter: grayscale(1); opacity: .45; }
+  .btile:has(> input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btile input.bcount { margin-left: auto; }
+  .cslots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr)); gap: 6px; }
+  .cslot { min-width: 0; }
+  .cslot.off { opacity: .45; }
+  .cslotbtn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 8px; text-align: left; font-weight: 500; background: var(--sunk); }
+  .cslotbtn.on { border-color: var(--accent); background: var(--accent-soft); }
+  .cslotbtn .ico, .cslotmenu .ico, .cempty { width: 28px; height: 28px; flex: none; }
+  .cempty { display: inline-block; border: 1px dashed var(--line); border-radius: 4px; }
+  .cslott { display: grid; min-width: 0; }
+  .cslotg { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cslotv { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cslotbtn:not(.on) .cslotv { color: var(--muted); }
+  .cslotmenu { position: fixed; z-index: 60; width: min(340px, calc(100vw - 16px)); max-height: 340px; overflow: auto; display: grid; gap: 2px; padding: 4px;
+               background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+  .cslotmenu[hidden] { display: none; }
+  .cslotmenu button { display: flex; align-items: center; gap: 8px; text-align: left; border: 0; background: none; padding: 4px 6px; font-weight: 500; }
+  .cslotmenu button:hover, .cslotmenu button:focus-visible { background: var(--accent-soft); }
+  .cslotmenu button > span { display: grid; min-width: 0; }
+  .cslotmenu .eff { font-size: 11px; color: var(--muted); }
+  /* round 177: a build's details — headline numbers, then tabs */
+  .detail .dactions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .dwrap { width: 0; min-width: 100%; }   /* round 178: the details' content does not size the table's columns (rows jumped per tab) */
+  .gbbadge { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; cursor: help; }
+  .gbbadge[hidden] { display: none; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+  .kpi { display: grid; justify-items: center; gap: 1px; padding: 8px 10px; text-align: center; }
+  .kpi + .kpi { border-left: 1px solid var(--line); }
+  .kpi .kl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  .kpi b { font: 700 22px/1.1 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi:first-child b { color: var(--accent); }
+  .kpi:nth-child(4) b { font-size: 18px; line-height: 27px; }   /* round 183: "You 85% · Pet 15%" is longer than a number */
+  .kpi .ks { font-size: 11px; color: var(--muted); }
+  .dtabs { display: flex; flex-wrap: wrap; gap: 2px; margin: 0 0 10px; border-bottom: 1px solid var(--line); }
+  .dtabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-weight: 500; padding: 6px 10px; margin-bottom: -1px; }
+  .dtabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .dpanel[hidden] { display: none; }
+  /* round 177: preset pills, restore all defaults */
+  .ppills { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .ppill { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--sunk); overflow: hidden; }
+  .ppill > button { border: 0; border-radius: 0; background: none; padding: 2px 10px; font: 600 11.5px var(--sans); color: var(--ink); }
+  .ppill > button:hover { background: var(--accent-soft); color: var(--accent); }
+  .ppill > button.pdel { padding: 2px 7px 2px 4px; color: var(--muted); font-weight: 400; }
+  .ppill > button.pdel:hover { color: var(--bad); background: none; }
+  .ppill.mine { border-color: var(--accent); }
+  .ppill.gear > button:first-child::after { content: " (gear)"; color: var(--muted); font-weight: 400; }
+  .charhead #resetAll { margin-left: auto; }
+  /* round 179 (user: saving a preset pushed the page): the row keeps one line — the message has its own slot, trimmed (whole on
+     hover); many preset buttons scroll sideways instead of wrapping */
+  .charhead { flex-wrap: nowrap; min-width: 0; }
+  .charpanel { grid-template-columns: minmax(0, 1fr); }   /* the row may not widen the panel */
+  .charhead > .parth, .charhead > #resetAll { flex: none; }
+  .charhead .presetbar { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+  .charhead .presetbar > .meta:first-child, .charhead .presetbar .qgroup { flex: none; flex-wrap: nowrap; }
+  .charhead .ppills { flex: 0 1 auto; min-width: 0; max-width: 38%; flex-wrap: nowrap; overflow: hidden; }   /* round 180: no hidden scrolling — what does not fit is behind "+N more" */
+  .charhead .presetbar input[type=text] { width: 170px; }
+  .ppill > button:first-child { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* long names trimmed, whole on hover */
+  .pdrop { flex: none; border-radius: 999px; padding: 3px 12px; font: 600 12px var(--sans); color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); }
+  .pmhead { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; padding: 6px 8px 2px; }
+  .pmnone { margin: 0; padding: 2px 8px 4px; font-size: 11.5px; }
+  .pmsave { display: flex; gap: 6px; padding: 6px 4px 2px; margin-top: 4px; border-top: 1px solid var(--line); }
+  .pmsave input[type=text] { flex: 1 1 auto; min-width: 0; width: auto; }
+  .pmsave button { padding: 3px 12px; }
+  .pmore { flex: none; border-radius: 999px; padding: 2px 10px; font: 600 11.5px var(--sans); color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); }
+  .pmore[hidden], .ppill[hidden] { display: none; }
+  .pmenu { position: fixed; z-index: 60; width: min(320px, calc(100vw - 16px)); max-height: 360px; overflow: auto; display: grid; gap: 2px; padding: 4px;
+           background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+  .pmenu[hidden] { display: none; }
+  .pmrow { display: flex; align-items: center; }
+  .pmrow > button { border: 0; background: none; text-align: left; padding: 4px 8px; font-weight: 500; }
+  .pmrow > button:first-child { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pmrow > button:first-child:hover { background: var(--accent-soft); color: var(--accent); }
+  .pmrow > .pdel { color: var(--muted); } .pmrow > .pdel:hover { color: var(--bad); }
+  .charhead .ppill { flex: none; }
+  #presetMsg { flex: 1 1 0; min-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 999px) {   /* narrow: a fixed grid — title + Restore, the preset buttons (sideways), name + Save, the message line */
+    .charhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; }
+    .charhead > .parth { grid-column: 1; grid-row: 1; } .charhead > #resetAll { grid-column: 2; grid-row: 1; margin: 0; }
+    .charhead .presetbar { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 8px; align-items: center; }
+    .charhead .ppills { grid-column: 2; max-width: none; flex-wrap: nowrap; overflow: hidden; }
+    .charhead .presetbar .qgroup { grid-column: 1 / -1; }
+    #presetMsg { grid-column: 1 / -1; min-height: 1.4em; }
+  }
+  /* round 177: the Sim bar — stays at the top of the window */
+  html { scroll-padding-top: 64px; }   /* a box scrolled into view is not hidden under the bar */
+  .simbar { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 10px;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, .2); }
+  .simbar .simgo { padding: 6px 20px; font-size: 13.5px; min-width: 84px; }
+  .simbar .simgo.stop { background: var(--bad); border-color: var(--bad); }
+  /* round 178: always one line — the status has a fixed share of the bar and trims itself, so its text never changes the bar */
+  .simbar { flex-wrap: nowrap; }
+  .simstatus { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 12px; flex: 1 1 420px; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; }
+  .simstatus > * { flex: none; }
+  .simstatus > .simlast { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .simbar .statbar { flex: none; flex-wrap: nowrap; }
+  .simbar > button { flex: none; }
+  .simlast b, .simbest b { font: 700 16px var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .simdot { font-weight: 600; } .simdot.ok { color: var(--good); } .simdot.warn { color: var(--c-crit); }   /* not "stale": that class is the old notice box (round 178) */
+  .simprog { display: block; flex: 0 1 220px; min-width: 80px; height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+  .simprog i { display: block; height: 100%; border-radius: 4px; background: var(--accent); transition: width .2s; }
+  .simbar .statbar { background: none; border: 0; padding: 0; gap: 5px; }
+  .simbar .chip { padding: 2px 7px; }
+  @media (max-width: 700px) { .simbar .statbar, #simToTop, .simlast > .meta:last-child, .simbest .meta { display: none; } .simbar { gap: 4px 10px; padding: 5px 8px; } .simstatus { flex-basis: 0; flex-grow: 1; } .simbar .simgo { min-width: 0; padding: 6px 14px; } }   /* phones: the button and the run only, one line */
+  /* round 176: the layout editor */
+  .layoutdlg { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 0; width: min(780px, calc(100vw - 32px)); }
+  .layoutdlg::backdrop { background: rgba(10, 8, 16, .55); }
+  .lyin { padding: 14px 16px; display: grid; gap: 8px; }
+  .lyin .cardhead h2 { margin: 0; font-size: 13px; color: var(--ink); }
+  .lyin > p.meta { margin: 0; }
+  .lygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .lygrid h3 { margin: 0 0 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .lylist { list-style: none; margin: 0; padding: 6px; min-height: 140px; border: 1px dashed var(--line); border-radius: 6px; display: grid; gap: 4px; align-content: start; }
+  .lylist.dropin { border-color: var(--accent); }
+  .lylist li { display: flex; align-items: center; gap: 5px; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--sunk); cursor: grab; font-size: 12px; font-weight: 600; touch-action: none; user-select: none; }
+  .lylist li .lyn { flex: 1 1 auto; min-width: 0; }
+  .lylist li .grip { color: var(--muted); }
+  .lylist li button { padding: 0 6px; font-size: 11px; line-height: 18px; }
+  .lylist li.dragging { opacity: .45; }
+  .lylist li.dropabove { box-shadow: 0 -2px 0 var(--accent); } .lylist li.dropbelow { box-shadow: 0 2px 0 var(--accent); }
+  #layoutBtn svg { width: 13px; height: 13px; }
+  /* round 172: Simple | Advanced (APL) next to each other */
+  .edrots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 14px; align-items: start; margin-top: 12px; }
+  .edcol.edrules { margin-top: 0; }   /* round 173: the old 8 px put Advanced lower than Simple */
+  .edcol { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); min-width: 0; }
+  .edcol > summary { font-weight: 600; cursor: pointer; font-size: 12.5px; }
+  .edcol > summary .meta { font-weight: 400; }
+  .edcol[open] > summary { margin-bottom: 6px; }
+  .edcol .edrot { margin-top: 0; }
+  .edcol > p.meta { margin: 0 0 6px; font-size: 11.5px; }
+  .edapl { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 3px; font-size: 12px; }
+  .edapl > li { display: flex; align-items: flex-start; gap: 6px; padding: 3px 4px; border-radius: 4px; background: var(--ground); }
+  .edapl > li.meta { background: none; }
+  .aplnum { flex: none; width: 18px; text-align: right; font: 600 11px/20px var(--mono); color: var(--muted); }
+  .apllines { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+  .aplline { line-height: 20px; }
+  .aplline .ico { width: 16px; height: 16px; }
+  .aplif { color: var(--ink); }
+  .aplif i { font-style: normal; color: var(--accent); font-weight: 600; }
+  .aplline .resetbtn { padding: 0 6px; font-size: 11px; }
+  .aplbtns { flex: none; display: inline-flex; gap: 2px; }
+  .aplbtns button { padding: 1px 6px; font-size: 11px; }
+  .aplgrp { padding-left: 10px; border-left: 2px solid var(--line); }
+  .edchecks { margin-top: 10px; } .edchecks h2 { margin: 0 0 4px; }
+  /* round 157: the rule editor */
+  .edrules { margin-top: 8px; } .edrules summary { font-weight: 600; cursor: pointer; }
+  .ruleform { border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 8px 0; display: grid; gap: 6px; }
+  .ruleform h4 { margin: 0; }
+  .cgrp { border-left: 2px solid var(--accent); padding-left: 8px; display: grid; gap: 4px; margin: 2px 0; }
+  .chead, .cleaf { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+  .cval { width: 90px; } .cbtn { padding: 1px 6px; font-size: 12px; } .cneg { font-size: 12px; }
+  .rulelist { margin: 4px 0 8px; padding-left: 18px; font-size: 12.5px; } .rulelist li { margin: 2px 0; }
+  input[type=number].bcount { width: 46px; display: inline-block; margin: 0 2px 0 6px; padding: 0 3px; font: 600 12px var(--mono); }
+  .cval { width: 90px !important; }
+  .refbar { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; }
+  .mv.up { color: var(--good); }
+  .mv.down { color: var(--bad); }
+  .mv.same { color: var(--muted); opacity: .5; }
+  .tabletools { justify-content: space-between; align-items: center; gap: 4px 12px; flex-wrap: wrap; }
+  .tabletools .switch { margin-left: auto; }
+  .tabletools .mv { margin: 0; font-size: 11px; }
+  /* build editor: quick sim next to the talent trees */
+  .edmain { display: grid; grid-template-columns: fit-content(640px) minmax(300px, 1fr); gap: 12px 14px; align-items: start; }
+  .edmain .edrots { display: contents; }   /* round 173: Simple | Advanced share the columns of trees | quick sim */
+  @media (min-width: 981px) { .edmain .trees { flex-wrap: nowrap; } .edmain .trees > .tree { flex: 1 1 0; } }   /* the trees fill their column */
+  .edleft { display: grid; gap: 12px; min-width: 0; }
+  .edleft .edcols { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 980px) { .edmain { grid-template-columns: minmax(0, 1fr); } }
+  .edquick { background: var(--ground); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 10px; min-width: 0; }
+  .edquick .cardhead h2 { margin: 0; }
+  .edquick .qempty { margin: 0; max-width: 60ch; }
+  .quick { border: 0; border-radius: 0; padding: 0; background: none; gap: 10px; }
+  .quick.old > :not(.qold) { opacity: .45; }
+  .qold { margin: 0; color: var(--c-crit); font-weight: 600; }
+  .qhead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; }
+  .qdps { display: flex; align-items: baseline; gap: 6px; }
+  .qdps b { font: 700 30px/1 var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .qdps span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  .qsub { display: grid; gap: 2px; min-width: 0; }
+  .qsub .qname { font-weight: 600; }
+  .qsub .ico { width: 16px; height: 16px; }
+  .qvs { font: 700 13px var(--mono); }
+  .quick h3 { margin: 0 0 4px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .quick h3 .meta { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11px; }
+  .quick .qfoot { margin: 0; font-size: 11px; }
+  .qraces { display: grid; gap: 2px; }
+  .qraces { max-width: 300px; }
+  .qrace { display: grid; grid-template-columns: 22px minmax(0, 1fr) 56px 58px; align-items: center; gap: 8px; width: 100%; padding: 2px 6px;   /* round 172: no bars */
+           border: 1px solid transparent; border-radius: 4px; background: none; font: 500 12px var(--sans); text-align: left; cursor: pointer; }
+  .qrace:hover { background: var(--sunk); }
+  .qrace[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); }
+  .qrace .n b { font-weight: 700; font-size: 13px; }
+  .qrace .d { text-align: right; font: 600 11px var(--mono); }
+  .qbar { display: block; height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+  .qbar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+  .qrace[aria-pressed=true] .qbar { background: var(--surface); }
+  .qdmg { display: grid; grid-template-columns: 20px minmax(0, max-content) minmax(40px, 1fr) 42px 50px; gap: 3px 8px; align-items: center; }
+  .qdmg .ico { width: 18px; height: 18px; }
+  .qdmg .qn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* compare two builds: one build list + a race list per side, A = accent, B = teal everywhere */
+  .cmpbar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; }
+  @media (max-width: 760px) { .cmpbar { grid-template-columns: minmax(0, 1fr); } #cmpSwap { justify-self: start; } }
+  .cmpside { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+  .cmpside select { flex: 1 1 200px; min-width: 0; }
+  .cmpside select.cmprace { flex: 0 1 190px; }
+  .cmptag { flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; font: 700 12px var(--mono); color: var(--surface); background: var(--accent); }
+  .cmptag.b { background: var(--c-hit); }
+  .cmpgrid { grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr)); }   /* two columns: the cards come in pairs */
+  .cmpt.cmptal { max-width: 640px; }
+  .cmpfold { margin-top: 8px; }
+  .cmphead > div { border-left: 4px solid var(--accent); }
+  .cmphead > div.b { border-left-color: var(--c-hit); }
+  .cmphead .dps b { font-size: 24px; font-weight: 700; }
+  .cmpt th.a { color: var(--accent); }
+  .cmpt th.b { color: var(--c-hit); }
+  .cmpt td .ico { width: 16px; height: 16px; }
+  .twin { display: grid; gap: 2px; min-width: 90px; }
+  .twin i { display: block; height: 5px; border-radius: 3px; background: var(--accent); min-width: 1px; }
+  .twin i.b { background: var(--c-hit); }
+  .cmpup { display: grid; grid-template-columns: minmax(0, max-content) minmax(60px, 1fr) repeat(3, auto); gap: 3px 10px; align-items: center; font-size: 12px; }
+  .cmpup .uhead { grid-column: 1 / -1; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 4px; }
+  .cmpup .ch { font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--muted); text-align: right; }
+  .cmpup .ch.a { color: var(--accent); }
+  .cmpup .ch.b { color: var(--c-hit); }
+  .cmpup .ulabel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .cmpup .ulabel .ico { width: 16px; height: 16px; }
+  .cmpfold > summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .cmpfold .cmp2 { margin-top: 8px; }
+  /* share link, copy results */
+  .sharebtns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .shareout { display: grid; gap: 4px; margin-bottom: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--sunk); }
+  .shareout[hidden] { display: none; }
+  .shareout textarea { white-space: pre; overflow-x: auto; word-break: normal; background: var(--surface); }
+  .shareout textarea[hidden] { display: none; }
+  /* charts: DPS by a stat, DPS by fight length */
+  .chartbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+  .chartbar label.c { min-width: 0; }
+  .chartbar select { max-width: min(320px, 100%); }
+  #chOut { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+  #chOut > * { min-width: 0; }
+  #chOut h2 { margin: 0; }
+  #chOut .chcap { margin: 0; max-width: 110ch; }
+  .chwrap { position: relative; min-width: 0; max-width: 1100px; }
+  svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .axis { stroke: var(--muted); stroke-width: 1; }
+  .chart text { fill: var(--muted); font: 11px var(--mono); }
+  .chart text.axl { font: 11.5px var(--sans); }
+  .chart text.dl { fill: var(--ink); font: 600 11.5px var(--sans); }
+  .chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .pt { stroke: var(--surface); stroke-width: 2; }
+  .chart .cur { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 4 3; opacity: .6; }
+  .chart .xh { stroke: var(--ink); stroke-width: 1; opacity: .35; }
+  .chtip { position: absolute; z-index: 5; pointer-events: none; min-width: 190px; max-width: 320px; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+           border-radius: 6px; padding: 7px 9px; font-size: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.28); }
+  .chtip b.h { display: block; margin-bottom: 4px; }
+  .chtip div { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+  .chtip i, .chlegend i { display: block; width: 10px; height: 10px; border-radius: 2px; }
+  .chtip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chtip em { font: 600 12px var(--mono); font-style: normal; }
+  .chlegend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; }
+  .chlegend span.it { display: inline-flex; align-items: center; gap: 6px; }
+  .chtable > summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .chtable td, .chtable th { font-size: 11.5px; }
+  .chtable td.curcol, .chtable th.curcol { background: var(--accent-soft); }
+  /* show the maths: a spell row of the details opens its calculation */
+  tr.mrow { cursor: pointer; }
+  tr.mrow:hover > td { background: var(--sunk); }
+  tr.mrow.open > td { background: var(--accent-soft); }
+  .mchev { display: inline-block; width: 6px; height: 6px; margin-left: 7px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); }
+  tr.mrow.open .mchev { transform: translateY(1px) rotate(-135deg); border-color: var(--accent); }
+  tr.mathrow > td { background: var(--ground); padding: 8px 10px 12px; }
+  .mathbox { max-width: 1000px; display: grid; gap: 6px; }
+  .mathbox h3 { margin: 0; font-size: 12.5px; }
+  .mathbox h3 .meta { font-weight: 400; }
+  .mathbox p { margin: 0; max-width: 115ch; }
+  .mathbox a { color: var(--accent); font-weight: 600; }
+  ol.math { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+  ol.math li { display: grid; grid-template-columns: minmax(150px, 240px) minmax(0, 1fr) auto; gap: 2px 12px; padding: 4px 8px; align-items: baseline; font-size: 12px; }
+  ol.math li + li { border-top: 1px solid var(--line); }
+  ol.math .ml { color: var(--muted); }
+  ol.math .mc { font: 11.5px var(--mono); overflow-wrap: anywhere; }
+  ol.math .mr { font: 600 12px var(--mono); text-align: right; white-space: nowrap; }
+  @media (max-width: 700px) { ol.math li { grid-template-columns: minmax(0, 1fr) auto; } ol.math .ml { grid-column: 1 / -1; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script>
+// Theme button (round 85, user): Auto (default — follows the system, or the theme the artifact viewer stamps on <html>),
+// Light or Dark. An explicit choice sets data-theme on <html> (the CSS already has light / dark token sets for it) and is
+// remembered per browser; Auto puts back whatever the viewer had stamped.
+(function () {
+  var root = document.documentElement, host = root.getAttribute('data-theme'), mine = null, mode = 'auto';
+  try { var m = localStorage.getItem('wfs.theme'); if (m === 'light' || m === 'dark') mode = m; } catch (e) { /* storage off: Auto */ }
+  function apply() {
+    mine = mode === 'auto' ? host : mode;
+    if (mine) root.setAttribute('data-theme', mine); else root.removeAttribute('data-theme');
+    paint();
+  }
+  // The viewer may re-stamp the theme later: remember it for Auto, keep an explicit choice on top.
+  new MutationObserver(function () {
+    var v = root.getAttribute('data-theme');
+    if (v === mine) return;
+    host = v; apply();
+  }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  function effective() {
+    var v = root.getAttribute('data-theme');
+    return v === 'light' || v === 'dark' ? v : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  var ICON = {
+    auto: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="currentColor"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    dark: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7z" fill="currentColor"/></svg>'
+  };
+  var NAME = { auto: 'Auto', light: 'Light', dark: 'Dark' };
+  function next() { return mode === 'auto' ? (effective() === 'dark' ? 'light' : 'dark') : mode === 'light' ? 'dark' : 'auto'; }
+  function paint() {
+    var b = document.getElementById('themeBtn'); if (!b) return;
+    b.innerHTML = ICON[mode] + NAME[mode];
+    b.title = 'Colour theme: ' + NAME[mode] + (mode === 'auto' ? ' (follows your system / viewer setting)' : '') + '. Click for ' + NAME[next()] + '.';
+    b.setAttribute('aria-label', b.title);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.getElementById('themeBtn');
+    b.addEventListener('click', function () {
+      mode = next();
+      try { if (mode === 'auto') localStorage.removeItem('wfs.theme'); else localStorage.setItem('wfs.theme', mode); } catch (e) { /* this page only */ }
+      apply();
+    });
+    paint();
+  });
+  if (window.matchMedia) { var mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', paint); }
+  apply();
+})();
+</script>
+
+<div class="wrap">
+  <header>
+    <div class="titles">
+      <img class="sitelogo" src="art/logo-64.png" width="32" height="32" alt="">
+      <h1>Xn's Forever Warlock Sim</h1>
+      <button type="button" id="themeBtn" class="themebtn">Auto</button>
+      <button type="button" id="layoutBtn" class="themebtn" title="Arrange the boxes of the page the way you like (kept in this browser)"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M1 2h6v5H1zM9 2h6v12H9zM1 9h6v5H1z"/></svg>Layout</button>
+      <a class="twitchbtn" href="https://www.twitch.tv/ascalontv" target="_blank" rel="noopener" title="Xn's live stream: come by with questions, or just to say hi"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 1 1.5 3.5v10h3V15h1.7l1.6-1.5h2.5L13.5 10V1h-11zm9.8 8.4-2 1.9H7.8L6.2 12.8v-1.5H4.1V2.2h8.2v7.2zM10.6 4.5h-1.2v3.4h1.2V4.5zm-3.2 0H6.2v3.4h1.2V4.5z"/></svg>Twitch</a>
+      <a class="discordbtn" href="https://discord.gg/uepKAsY" target="_blank" rel="noopener" title="Xn's Discord server: questions, ideas and bug reports"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 3.2A12.3 12.3 0 0 0 10.4 2.3l-.4.8a11.4 11.4 0 0 0-4 0l-.4-.8a12.3 12.3 0 0 0-3.1.9C.6 6.1.1 8.9.3 11.7a12.4 12.4 0 0 0 3.8 1.9l.8-1.3a8 8 0 0 1-1.3-.6l.3-.2a8.8 8.8 0 0 0 7.6 0l.3.2a8 8 0 0 1-1.3.6l.8 1.3a12.4 12.4 0 0 0 3.8-1.9c.3-3.3-.5-6-2.3-8.5zM5.6 10.1c-.7 0-1.3-.7-1.3-1.5s.6-1.5 1.3-1.5 1.3.7 1.3 1.5-.6 1.5-1.3 1.5zm4.8 0c-.7 0-1.3-.7-1.3-1.5s.6-1.5 1.3-1.5 1.3.7 1.3 1.5-.6 1.5-1.3 1.5z"/></svg>Discord</a>
+      <nav class="toplinks" aria-label="Project links">
+        <a href="#" id="tourLink" title="A short look around the page">Tour</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://github.com/XNWLK/WarlockSIM" target="_blank" rel="noopener">GitHub</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="https://github.com/XNWLK/WarlockSIM/blob/main/MECHANICS.md" target="_blank" rel="noopener" title="The rule book: every formula, and what each talent, spell, pet, racial, buff and consumable does in the sim, with worked examples">How it's calculated</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <span>3D practice sim: <a href="practice/" target="_blank" rel="noopener">Forever Warlocking</a>
+          (<a href="https://github.com/XNWLK/ForeverWarlocking" target="_blank" rel="noopener">GitHub</a>)</span>
+        <span class="sep" aria-hidden="true">·</span>
+        <span>In-game addon: <a href="https://www.curseforge.com/wow/addons/xns-warlock-sim" target="_blank" rel="noopener" title="The sim inside the game: it reads your own character (talents, race, demon and stats) and sims it there. Settings codes and build codes work both ways.">Xn's Warlock Sim</a>
+          (<a href="https://github.com/XNWLK/WarlockSIMAddon" target="_blank" rel="noopener">GitHub</a>)</span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Round 177 (user: the Sim panel "at the top"): Sim! / Stop, the run's progress or the last run, the stats used; stays in view. -->
+  <div class="simbar" id="simBar" role="region" aria-label="Simulate">
+    <button class="primary simgo" id="runBtn" type="button">Sim!</button>
+    <div class="simstatus" id="simStatus" aria-live="polite"></div>
+    <div class="statbar" id="statbar" aria-label="Stats used for this simulation"></div>
+    <button type="button" class="resetbtn" id="simToTop" title="Back to the build list">Builds ↑</button>
+  </div>
+  <!-- Round 173 / 174 (user: use the room of wide screens; place things by what they belong to): from 2350 px wide, left = what
+       the sim shows (builds, compare, charts, fight lengths), right = what you put in (your character and the fight, gear builder,
+       build editor, import / export). Narrower, .cols / .colmain / .colside step aside (display: contents) and it all stacks as
+       before (Racials by fight length last, by CSS order). -->
+  <div class="cols">
+  <div class="colmain">
+  <section class="panel buildpanel" id="buildPanel" aria-labelledby="buildsTitle">
+    <div class="runbar">
+      <h2 id="buildsTitle">Builds</h2>
+      <div class="meta" id="runMeta">Starting…</div>
+    </div>
+    <div class="stale" id="stale" role="status" hidden>
+      <span id="staleMsg"><b>Settings changed since this run.</b> The results below are from the previous settings.</span>
+      <button type="button" id="staleRun" class="primary">Sim!</button>
+    </div>
+    <div class="ctlrow">
+    <div class="quickbar" id="quickbar" aria-label="Quick setup">
+    <span class="qlabel">Quick setup</span>
+    <span class="qgroup"><span class="meta">Gear</span>
+      <span class="seg" role="group" aria-label="Gear preset">
+        <button type="button" data-qgear="default" aria-pressed="false">Default</button>
+        <button type="button" data-qgear="hitcap" aria-pressed="false">Hit-capped</button>
+      </span></span>
+    <span class="qgroup"><span class="meta">Buffs &amp; consumables</span>
+      <span class="seg" role="group" aria-label="Buffs and consumables preset">
+        <button type="button" data-qside="default" aria-pressed="false">Default</button>
+        <button type="button" data-qside="max" aria-pressed="false">Max</button>
+      </span></span>
+    <span class="meta" id="quickMsg" role="status"></span>
+  </div>
+    <div class="tabletools"><label class="c" for="myRace" title="Rank the builds for the race you play. Each build's best race: every build is listed with whichever race does the most damage with it.">Rank for <select id="myRace"></select></label><span class="meta" id="moveNote" hidden><span class="mv up">▲</span> <span class="mv down">▼</span> places gained / lost since the previous run (hover for the DPS change)</span><span class="refbar" id="refBar"></span><span class="sharebtns"><button type="button" id="shareBtn" class="resetbtn" title="Copies a link that opens the sim with these settings loaded">Share link</button><button type="button" id="copyResBtn" class="resetbtn" title="Copies the results table as text that reads well in a chat (Discord), with a link that opens these settings">Copy results</button></span><label class="switch" for="allRaces" title="Open every build's other races and its no-race baseline under its row. The pill next to each race still opens or closes one build."><input id="allRaces" type="checkbox"> Show all races</label></div>
+    </div>
+    <div class="shareout" id="shareOut" hidden>
+      <div class="cardhead"><span class="meta" id="shareMsg" role="status"></span><button type="button" id="shareClose" class="resetbtn">Close</button></div>
+      <textarea id="shareText" rows="2" readonly spellcheck="false" aria-label="Text to share" hidden></textarea>
+    </div>
+    <div class="scroll"><table id="results"><thead><tr>
+      <th>#</th><th>Build</th><th title="The race the build is listed with: its best race, or your race if you picked one in Rank for (above the table). The +4 races pill shows the other races and the no-race baseline; Show all races opens them for every build.">Race</th><th>Pets</th>
+      <th title="Your damaging spells in priority order (left = checked first) with their share of the total damage (bar length relative to the build's biggest source); Bane of Doom and Bane of Agony share one split icon (one Bane per target). Pet, Demonic Brand, Touch of the Grave and explosives after the divider. Curses, Life Tap and racial cooldowns are in the details' full priority list.">Spells &amp; damage</th>
+      <th class="n dpsh">DPS</th><th class="n wrap2">vs best</th>
+      <th class="n wrap2" title="What the race adds: DPS change vs the same build with no race (Human base stats, no racials).">vs no race</th>
+      <th class="w" style="--c:var(--c-sp)" title="DPS per 1 spell power">SP<span class="sub">DPS per 1</span></th>
+      <th class="w" style="--c:var(--c-hit)" title="1% hit is worth this much spell power (hit weight ÷ SP weight)">Hit<span class="sub">SP per 1%</span></th>
+      <th class="w" style="--c:var(--c-crit)" title="1% crit is worth this much spell power">Crit<span class="sub">SP per 1%</span></th>
+      <th class="w" style="--c:var(--c-haste)" title="1% haste is worth this much spell power">Haste<span class="sub">SP per 1%</span></th>
+      <th class="w" style="--c:var(--c-int)" title="1 Intellect is worth this much spell power (mana + 60 Int = 1% crit)">Int<span class="sub">SP per 1</span></th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+  <details class="card toolcard" id="compare">
+    <summary>Compare two builds</summary>
+    <div class="cmpbar">
+      <div class="cmpside"><b class="cmptag a">A</b>
+        <select id="cmpA" aria-label="Build A"></select>
+        <select id="cmpAR" class="cmprace" aria-label="Race of build A"></select></div>
+      <button type="button" id="cmpSwap" title="Swap A and B" aria-label="Swap A and B">⇄</button>
+      <div class="cmpside"><b class="cmptag b">B</b>
+        <select id="cmpB" aria-label="Build B"></select>
+        <select id="cmpBR" class="cmprace" aria-label="Race of build B"></select></div>
+    </div>
+    <div id="cmpOut"></div>
+  </details>
+  <details class="card toolcard" id="charts">
+    <summary>Charts — DPS by a stat · DPS by fight length · what each buff is worth</summary>
+    <div class="chartbar">
+      <label class="c" for="chKind">Chart <select id="chKind">
+        <option value="stat">DPS by a stat</option>
+        <option value="len">DPS by fight length</option>
+        <option value="buffs">What each raid buff and debuff is worth</option>
+      </select></label>
+      <label class="c" for="chStat" id="chStatLbl">Stat <select id="chStat"></select></label>
+      <label class="c" for="chBuild">Builds <select id="chBuild"></select></label>
+      <button type="button" id="chRun" class="primary" title="Simulates the chosen builds again at every point of the chart, with your current settings">Draw chart</button>
+      <span class="meta" id="chMsg" role="status"></span>
+    </div>
+    <div id="chOut"><p class="meta chcap">Pick a chart and press Draw chart. <b>DPS by a stat</b> shows how a build's damage grows as one stat on your gear goes up, with everything else as you have set it — for example where more hit stops helping. <b>DPS by fight length</b> shows which build is ahead in short and in long fights. <b>What each raid buff and debuff is worth</b> measures, for one build, what you lose without each one you have on and what you would gain with each one you have off.</p></div>
+  </details>
+  <details class="card toolcard" id="lenSheet">
+    <summary>Racials by fight length <span class="meta">— every build and race at 60, 120, 180, 240 and 300 s</span></summary>
+    <p class="meta" id="lenMsg"></p>
+    <div class="btnrow"><label class="c" for="lenTargets" title="2 and 3 targets: your DoTs on every target (multi-DoT), Bane of Havoc as usual for the builds that have it">Targets <select id="lenTargets"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label><label class="c" for="lenCmp">% against <select id="lenCmp"><option value="best">the best race at that length</option><option value="base">no race (what the race adds)</option><option value="180">the same race at 180 s</option></select></label><button type="button" id="lenRun" class="primary" title="Simulates every build and race at the five fight lengths with the settings you have now (1,000 fights each, your fight length's ± % per fight)">Redo with my settings</button></div>
+    <div class="scroll"><table id="lenTable" class="lentable"></table></div>
+  </details>
+  </div>
+  <div class="colside">
+  <section class="panel charpanel" aria-labelledby="charTitle">
+  <div class="charhead">
+    <h2 class="parth" id="charTitle">Your character and the fight</h2>
+    <div class="presetbar" id="presetBar" aria-label="Saved setups">
+      <!-- round 181 (user: "just have all presets be a dropdown"): one button, one list — load (click), delete (✕), save (bottom) -->
+      <button type="button" class="pdrop" id="presetMore" aria-haspopup="true" aria-expanded="false" title="Load, save or delete a whole setup">Presets ▾</button>
+      <select id="presetSel" hidden aria-hidden="true"></select>
+      <div class="pmenu" id="presetMenu" role="menu" aria-label="Presets" hidden><div id="presetList"></div>
+        <div class="pmsave"><input id="presetName" type="text" placeholder="Name for your current settings" aria-label="Name for a new preset" maxlength="40"><button type="button" id="presetSave" class="primary" title="Save everything you have set — stats, buffs, debuffs, consumables, fight and pet settings — under this name. Kept in this browser.">Save</button></div></div>
+      <span class="meta" id="presetMsg" role="status"></span>
+    </div>
+    <button type="button" id="resetAll" class="resetbtn" data-label="Restore all defaults" data-armed="Click again: every setting back to the default" title="Stats, buffs, debuffs, consumables, fight and pet settings, cheat mode — all back to the defaults (your builds, presets and layout stay)">Restore all defaults</button>
+  </div>
+  <section class="setup" id="settings" aria-label="Stats and fight settings">
+    <div class="card statcard">
+      <div class="cardhead">
+        <h2>Stats</h2> <span class="gbbadge" id="gbNote" hidden title="Gear builder on: each Sheet (gear) value is a naked character plus your items in the gear builder; what you type here is added on top.">Sheet = gear builder</span>
+        <button type="button" id="resetStats" class="resetbtn" title="Reset gear values, race, the crit option and Engineering to the defaults. Buffs, consumables and fight settings (right panel) are not touched.">Reset to defaults</button>
+      </div>
+      <div class="totbar">
+        <label class="c" for="t_race">Race <select id="t_race"></select></label>
+        <label class="c" for="o_critAll"><input id="o_critAll" type="checkbox"> Sheet crit % already includes talents, racials &amp; oil</label>
+        <label class="c" for="o_eng" title="Engineering unlocks the explosives in the Consumables tab. No other profession has a DPS effect for a Warlock in Forever."><input id="o_eng" type="checkbox"> Engineering (explosives)</label>
+      </div>
+      <div class="scroll"><table class="tot" id="totalTable"></table></div>
+      <p class="meta"><b>Sheet (gear)</b> = your character sheet with gear only (editable). <b>Total</b> = race base + gear + raid buffs +
+        consumables + weapon oil + passive racials (read-only; the per-build Spellstone / Firestone is not included). Talents differ per build and are shown in each build's details.
+        Timed effects (potions, Power Infusion, Blood Fury, Berserking, Eureka) are applied in the fight when used.
+        Defaults: 500 SP, 5% hit, 10% crit, Int 148, Spirit 54, Stamina 160, MP5 0.</p>
+    </div>
+
+    <div class="card sidecard">
+      <div class="tabrow">
+        <div class="tabs" role="tablist" aria-label="Buffs, consumables and fight">
+          <button type="button" role="tab" id="tab_buffs" aria-controls="pane_buffs" aria-selected="true">Buffs &amp; debuffs <span class="cnt" id="cnt_stats"></span></button>
+          <button type="button" role="tab" id="tab_cons" aria-controls="pane_cons" aria-selected="false">Consumables <span class="cnt" id="cnt_cons"></span></button>
+          <button type="button" role="tab" id="tab_fight" aria-controls="pane_fight" aria-selected="false">Fight &amp; pets</button>
+        </div>
+        <button type="button" id="resetSide" class="resetbtn" title="Reset raid buffs, boss debuffs, boss armor, consumables, fight settings, pet scaling and options to the defaults. Your stats (left panel) are not touched.">Reset to defaults</button>
+      </div>
+
+      <div class="pane" role="tabpanel" id="pane_buffs" aria-labelledby="tab_buffs">
+        <fieldset><legend>Raid buffs</legend>
+          <div id="buffBoxes" class="checks"></div>
+        </fieldset>
+        <fieldset><legend><span id="armorNote" class="hashelp">Boss debuffs</span></legend>
+          <div id="debuffBoxes" class="checks"></div>
+        </fieldset>
+      </div>
+
+      <div class="pane" role="tabpanel" id="pane_cons" aria-labelledby="tab_cons" hidden>
+        <p class="meta">One per group: click a slot to choose (hover for what it does). The weapon stone and a weapon oil stack. Explosives need Engineering (Stats panel).
+          Mana potions and runes are used when at least their amount is missing; the Spellblasting potion follows "Pop cooldowns" (Fight &amp; pets).</p>
+        <div id="consBoxes" class="cslots"></div>
+      </div>
+
+      <div class="pane" role="tabpanel" id="pane_fight" aria-labelledby="tab_fight" hidden>
+        <div class="fcols">
+        <fieldset><legend>Fight</legend>
+          <label class="f" for="duration">Duration (s)<input id="duration" type="number" min="10" step="10"></label>
+          <label class="f" for="iterations">Fights per combo<input id="iterations" type="number" min="10" step="100"></label>
+          <label class="f" for="executePct">Execute below (% HP)<input id="executePct" type="number" min="0" max="100"></label>
+          <label class="f" for="precast" style="grid-template-columns: minmax(0, 96px) minmax(56px, 114px)" title="A precast is a spell you start before the pull so that its cast finishes as the fight timer starts. It lands at second 0, its cast time costs no fight time, its mana is already spent and its cooldown starts at second 0. Only spells with a cast bar can be precast. A build that cannot precast the chosen spell (Incinerate without the talent, Corruption made instant by talents) starts the fight as usual. Your cooldowns are not used for it.">Precast<select id="precast"></select></label>
+        </fieldset>
+        <fieldset><legend title="Your health is simulated: Life Tap costs 430 health, Hellfire burns you every second, a Demonic Rune costs 800 and a Goblin Sapper hurts you too. Drain Life, Siphon Life, Death Coil and Touch of the Grave give health back. Without enough health a Life Tap has to wait. Damage from the boss is not simulated.">Healing you receive</legend>
+          <label class="f" for="healAmount" title="Health you are healed for each time. 0 = nobody heals you.">Healed for (health)<input id="healAmount" type="number" min="0" step="100"></label>
+          <label class="f" for="healEvery" title="Seconds between two heals; the first one comes after this many seconds.">… every (s)<input id="healEvery" type="number" min="0" step="1"></label>
+        </fieldset>
+        <fieldset><legend>Encounter</legend>
+          <label class="f" for="encPreset">Preset<select id="encPreset">
+            <option value="">— choose —</option>
+            <option value="default">Standard: 2 min, 1 target</option>
+            <option value="short">Short: 90 s</option>
+            <option value="long">Long: 5 min</option>
+            <option value="move">Movement: 3 s every 20 s</option>
+            <option value="heavyMove">Heavy movement: 5 s every 15 s</option>
+            <option value="twoTargets">Two targets (Bane of Havoc)</option>
+            <option value="twoDots">Two targets, multi-DoT</option>
+            <option value="threeDots">Three targets, multi-DoT</option>
+            <option value="latency">High latency: 150 ms</option>
+            <option value="hits">Taking damage: a hit every 2 s</option>
+          </select></label>
+          <label class="f" for="latencyMs" title="Reaction delay after each of your casts / GCDs">Latency (ms)<input id="latencyMs" type="number" min="0" step="10"></label>
+          <label class="f" for="travelMs" title="How long projectiles (Shadow Bolt, Soul Fire, Incinerate, Death Coil, the Imp's Firebolt) fly before they hit. 0 = standing right in front of the boss.">Travel time (ms)<input id="travelMs" type="number" min="0" step="50"></label>
+          <label class="f" for="moveEvery" title="Every N seconds you have to move (0 = never)">Move every (s)<input id="moveEvery" type="number" min="0" step="5"></label>
+          <label class="f" for="moveDuration" title="Seconds of movement each time; only instants can be cast">… for (s)<input id="moveDuration" type="number" min="0" step="1"></label>
+          <label class="f" for="hitEvery" title="You take a direct hit every N seconds (0 = never; the first hit comes at a random moment). A hit while casting pushes the cast back 1.0 s, then 0.8 / 0.6 / 0.4 / 0.2 s for later hits on the same cast (0.2 s from then on), never further back than its start. A hit while channeling cuts 25% of the channel's full duration. Intensity (Destruction spells), Fel Concentration (Drain Life, Drain Soul, Wrack) and Concentration Aura give a chance to ignore it.">Take a hit every (s)<input id="hitEvery" type="number" min="0" step="0.5"></label>
+          <label class="c" for="o_ltMove" title="While you move only instants can be cast. On: when no instant from the priority can be cast (while moving, or in the short wait before a movement phase when no cast would finish in time), Life Tap (instant) instead of waiting, whenever it restores mana. Those taps then do not have to interrupt your casting later."><input id="o_ltMove" type="checkbox"> Life Tap while moving</label>
+          <label class="f" for="targets" title="Extra targets: builds with Bane of Havoc put it on target 2 (15% of the damage you deal to the other targets is copied to it). With Multi-DoT on, your DoTs are also kept on the extra targets. No AoE spells are simulated.">Targets<select id="targets"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <label class="c" for="o_multiDot" title="Keep Corruption, Siphon Life, Bane of Agony and Immolate on the extra targets too (inserted right before the filler in every priority list). Your Curse of the Elements is put on each extra target first (if Keep Curse of the Elements up is on). The Havoc target cannot also take Bane of Agony. Each extra target has its own Improved Shadow Bolt (only from Shadow Bolt crits on it). Extra targets live the whole fight."><input id="o_multiDot" type="checkbox"> Multi-DoT the extra targets</label>
+        </fieldset>
+        <fieldset><legend>Options</legend>
+          <label class="c" for="o_coe"><input id="o_coe" type="checkbox"> Keep Curse of the Elements up</label>
+          <label class="c" for="o_pet"><input id="o_pet" type="checkbox"> Simulate pets</label>
+          <label class="c" for="o_bookRanks" title="Off: the highest trainer ranks (Shadow Bolt R9, Immolate R7, Corruption R6). On: the ranks taught by the AQ20 books that drop in Ruins of Ahn'Qiraj (Shadow Bolt R10, Immolate R8, Corruption R7)."><input id="o_bookRanks" type="checkbox"> AQ20 book ranks (Shadow Bolt R10, Immolate R8, Corruption R7)</label>
+          <label class="c" for="o_dotEnd" title="Near the end of the fight a DoT recast often cannot finish before the boss dies. On: the sim adds up the damage the recast would still do (the ticks that land in time, plus Immolate's hit and what the DoT enables: Incinerate's bonus, a Conflagrate, Nightfall procs, Soul Siphon) and recasts only if that beats the filler in the same time. Off: the simple rule (recast while at least 2 ticks fit; Bane of Agony with 12 s left)."><input id="o_dotEnd" type="checkbox"> Skip DoT recasts that no longer pay off before the boss dies</label>
+        </fieldset>
+        </div>
+        <details class="adv" id="advFight">
+          <summary>Advanced <span class="meta">— boss armor and resistances, run settings, pet scaling</span> <span class="ctag" id="advChanged" hidden title="At least one of these settings is not at its default">changed</span></summary>
+        <div class="fcols">
+        <fieldset><legend title="The boss itself, before your raid's debuffs (those are in the Buffs &amp; debuffs tab).">Boss armor &amp; resistances</legend>
+          <label class="f" for="bossArmor">Boss armor (before debuffs)<input id="bossArmor" type="number" min="0" step="100"></label>
+          <label class="f" for="resShadow" title="Resistance left after Curse of the Elements (−75) and Spell Pierce is rolled as partial resists (0/25/50/75/100%) on every hit and tick; average = 0.75 × resistance / 300.">Boss Shadow resistance<input id="resShadow" type="number" min="0" step="5"></label>
+          <label class="f" for="resFire" title="As Shadow resistance, for Fire spells.">Boss Fire resistance<input id="resFire" type="number" min="0" step="5"></label>
+          <label class="c" for="o_levelRes" title="A boss 3 levels above you has +24 resistance to all schools (8 per level): about 6% of your damage is resisted on average — until Curse of the Elements is on the boss, which takes it to 0."><input id="o_levelRes" type="checkbox"> Level resistance (+24, removed by Curse of the Elements)</label>
+        </fieldset>
+        <fieldset><legend>Run</legend>
+          <label class="f" for="durVar" title="Each fight lasts the duration ± up to this % (uniform), so results don't hinge on one exact fight length.">Length variation ± %<input id="durVar" type="number" min="0" max="50" step="5"></label>
+          <label class="f" for="weightIterations">Fights per stat weight<input id="weightIterations" type="number" min="10" step="100"></label>
+          <label class="f" for="weightPrecision" title="0 = each stat weight from one run of the fights above. A number = keep adding runs of them (new fights each time, up to 10) until every chosen weight is known to ± this much spell power (95%). The details then show the ± of each weight.">Stat weight precision ± SP<input id="weightPrecision" type="number" min="0" step="0.1"></label>
+          <div class="f wsel" title="Which stat weights a Sim! computes. Spell power is always on: the others are shown as spell power. Each one is one more run per build.">Stat weights for <span id="wStats"></span></div>
+          <label class="f" for="seed" title="Same seed = the same fights = reproducible results.">Random seed<input id="seed" type="number"></label>
+          <label class="f" for="showPct" title="Rows more than this % behind the best DPS are hidden (still simulated); applies at once, no rerun. 0 = show all (default). Pinned builds (the pin left of the rank) always stay shown.">Show builds within % of best<input id="showPct" type="number" min="0" max="100" step="1"></label>
+        </fieldset>
+        <fieldset><legend title="Measured in Forever: 10 of your spell power = 1 pet spell power, 6 = 1 pet attack power (the Imp's tooltip: attack power 17% of your spell damage). Demonic Knowledge adds its bonus to the pet directly. Succubus base melee 73.5 DPS is a Season of Discovery value; she crits with your spell crit and hits with your hit, and against the boss 40% of her swings are glancing blows (65% damage) and her crit is 4.8% lower.">Pet scaling (10% SP / 1 AP per 6 SP — measured in Forever)</legend>
+          <label class="f" for="p_spPct">Pet spells: % of your SP<input id="p_spPct" type="number" min="0" step="1"></label>
+          <label class="f" for="p_succAp">Succubus melee: AP per 1 SP<input id="p_succAp" type="number" min="0" step="0.01"></label>
+          <label class="f" for="p_succBase">Succubus melee: base DPS<input id="p_succBase" type="number" min="0" step="5"></label>
+        </fieldset>
+        </div>
+        </details>
+        <details class="adv" id="cheatBox">
+          <summary>Cheat mode <span class="meta">— spells that always hit or always crit, to try streaks of luck</span> <span class="ctag" id="cheatOn" hidden>on</span></summary>
+          <p class="meta">A ticked spell never misses (100% hit) or always crits (100% crit); your demon's attacks too (its melee: no miss, no dodge; every swing that is not a glancing blow crits). Everything else is rolled as usual. These are not real numbers: while cheat mode is on, the results say so.</p>
+          <div class="cheatlist" id="cheatList"></div>
+          <div class="btnrow"><button type="button" id="cheatClear" class="resetbtn">Untick all</button></div>
+        </details>
+        <div class="cdbox">
+          <div class="cdhead">
+            <label class="c" for="o_actives" title="When to pop your short cooldowns for the first time: the racial cooldown (Blood Fury, Berserking, Eureka!), the Major Spellblasting Potion and Power Infusion. After that each one is used again whenever it is ready. 'Bane of Doom explodes' = right before the cast the first explosion falls into; builds that never cast Bane of Doom (or fights where it cannot explode) pop at the pull. Execute = boss below 35% health. Custom timeline = you place every use yourself — also mana potions, runes and explosives; whatever you do not place is used automatically as usual. Every cooldown has a row; its checkbox is the same switch as in the Buffs & debuffs / Consumables tab, and a switched-off row is greyed. The racial row shows one race at a time (Orc, Troll, Gnome buttons) with its real timers; '=' keeps one set of times for all three races. Eureka! (Gnome) is then popped right before the next long cast (Shadow Bolt, Searing Pain, Incinerate, Soul Fire, a channel), so no charge goes to a DoT.">Pop cooldowns (potion, racial, Power Infusion)
+              <select id="o_actives">
+                <option value="pull">on the pull</option>
+                <option value="doom">when the first Bane of Doom explodes</option>
+                <option value="execute">in the execute phase (boss below 35%)</option>
+                <option value="custom">custom timeline</option>
+              </select></label>
+            <button type="button" id="cdClear" class="resetbtn" hidden title="Remove every placed use: everything is automatic again">Clear timeline</button>
+          </div>
+          <div id="cdTl" class="cdtl" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </section>
+  <!-- The gear builder's place (round 147, user: "in the final version the gear builder will be at the top"): app/app.js moves
+       the #gear card in here (GEAR_PLACE = 'top' since round 166, user: "remove the under construction"). -->
+  <div class="gearanchor" id="gearTop"></div>
+  <details class="card toolcard" id="editor">
+    <summary>Build editor — make your own builds</summary>
+    <div class="edtop">
+      <label class="c" for="edFrom">Start from <select id="edFrom"></select></label>
+      <button type="button" id="edLoadFrom">Load</button>
+      <label class="c" for="edName">Name <input id="edName" type="text" maxlength="40" placeholder="My build"></label>
+      <label class="c" for="edPet">Pet out <select id="edPet"></select></label>
+      <label class="c" for="edSac">Sacrificed <select id="edSac"></select></label>
+      <label class="c" for="edOil" title="The build's Spellstone or Firestone. A weapon oil from the Consumables tab stacks with it.">Weapon stone <select id="edOil"></select></label>
+      <span class="meta" id="edPts"></span>
+      <button type="button" id="edResetAll" class="resetbtn" title="Remove every talent point in all three trees (pet, weapon and priority stay)">Reset all talents</button>
+    </div>
+    <p class="meta simkey">Click a talent to add a point; Shift+click or right-click removes one. Hover for the tooltip.
+      Marks:<span class="sim none">✕</span>not simulated<span class="sim part">½</span>partly simulated<span class="sim cond">if</span>only with a setting or action</p>
+    <div class="edmain">
+      <div class="edleft">
+        <div id="edTrees" class="trees"></div>
+      </div>
+      <div class="edquick" aria-label="Quick sim of the build in the editor">
+        <div class="cardhead">
+          <h2>Quick sim</h2>
+          <button type="button" id="edQuick" class="primary" title="Simulate only this build: 300 fights per race with the current settings, next to the sheet's best build on the same fights">Quick sim this build</button>
+          <button type="button" id="edPoints" title="Simulates this build once more for every talent it has points in, with one point fewer there, on the same fights: what the last point of each talent is worth">Value of each point</button>
+        </div>
+        <div id="edQuickOut" role="status"></div>
+        <div id="edPtsOut" role="status"></div>
+      </div>
+    <!-- Round 172 (user): the priority twice, next to each other — as a simple list and as APL lines. Both show the same list. -->
+    <div class="edrots">
+      <details class="edcol" id="edSimpleBox" open><summary>Simple <span class="meta">— the priority list, top = checked first</span></summary>
+        <ol id="edRot" class="edrot"></ol>
+        <div class="btnrow"><select id="edAddAct" aria-label="Action to add"></select><button type="button" id="edAdd">Add to the priority</button></div>
+      </details>
+      <details class="edcol edrules" id="edRulesBox" open><summary>Advanced (APL) <span class="meta">— the same priority as conditions</span></summary>
+        <p class="meta">Each line casts its spell when its conditions hold — the first line that can is cast. A simple action shows here as the lines that check exactly what it checks; edit a line and it stays that action as long as it still matches one (your numbers and extra conditions are kept), otherwise it becomes an APL line of your own. A new APL line that matches a simple action is added as that action.</p>
+        <div class="dtabs apltabs" role="tablist" aria-label="Advanced (APL)"><button type="button" role="tab" data-apltab="list" aria-selected="true">Priority list</button><button type="button" role="tab" data-apltab="groups" aria-selected="false">Action groups</button><button type="button" role="tab" data-apltab="vars" aria-selected="false">Variables</button></div>
+        <ol id="edApl" class="edapl"></ol>
+        <div id="edRules"></div></details>
+    </div>
+    </div>
+    <div class="edchecks"><h2>Checks</h2><ul id="edErrs" class="ederrs"></ul></div>
+    <label class="c tlon" for="edTlOn" title="Script the fight yourself: drag spells onto a timeline at the exact moment you want them cast. The priority above still runs: it fills every gap, recasts what misses and takes over when the timeline ends."><input id="edTlOn" type="checkbox"> Super advanced: fight timeline</label>
+    <div id="edTl" class="tlbox" hidden>
+      <div class="btnrow">
+        <span class="meta">Spells (drag onto the timeline, or click to add at the end):</span>
+        <button type="button" id="edTlFill" title="Put the casts the priority makes in fight #1 (Human, current settings) on the timeline as a starting point">Fill from the priority</button>
+        <button type="button" id="edTlClear">Clear</button>
+        <button type="button" data-tlzoom="0.5" aria-label="Zoom out">−</button><button type="button" data-tlzoom="2" aria-label="Zoom in">+</button>
+      </div>
+      <div id="edTlPal" class="tlpals"></div>
+      <div class="tlscroll"><div id="edTlLane" class="tllane"></div></div>
+      <div id="edTlSel" class="btnrow tlsel"></div>
+      <p class="meta" id="edTlInfo"></p>
+    </div>
+    <div class="btnrow">
+      <button type="button" id="edSave" class="primary">Add to the sheet</button>
+      <button type="button" id="edNew">New build</button>
+      <button type="button" id="edCopy">Copy build code</button>
+      <button type="button" id="edWowhead" title="A link to this build's talents in the Wowhead Forever talent calculator, copied to the clipboard">Wowhead talent link</button>
+      <input id="edCode" type="text" placeholder="WFB1:… or a Wowhead talent link" aria-label="Build code or Wowhead talent link">
+      <button type="button" id="edLoadCode" title="A build code (WFB1:…) loads the whole build; a Wowhead Forever talent link sets the talents of the build you are editing">Load build code</button>
+    </div>
+    <p class="meta" id="edMsg" role="status"></p>
+    <h2>Your builds</h2>
+    <ol id="edList" class="batchlist"></ol>
+  </details>
+  <details class="card toolcard" id="tools">
+    <summary>Input / output settings and builds · batch compare</summary>
+    <div class="toolgrid">
+      <div class="toolpart">
+        <h2>Input / output: settings and builds</h2>
+        <p class="meta">A code is a line of text you can keep or send to someone. A <b>settings code</b> (starts with WFS1:) holds your stats, fight,
+          buffs, debuffs, consumables, professions and pet settings. A <b>build code</b> (WFB1:) holds one build: talents, pet, weapon stone and
+          priority. Make a code here, or paste one and press Load — settings are applied, a build opens in the build editor. A <b>gear code</b> (WFG1:) from the in-game addon goes into the gear builder.</p>
+        <textarea id="codeBox" rows="3" spellcheck="false" aria-label="Settings or build code" placeholder="WFS1:… or WFB1:…"></textarea>
+        <div class="btnrow">
+          <button type="button" id="codeMake">Make settings code</button>
+          <button type="button" id="codeMakeBuild">Make build code</button>
+          <select id="ioBuild" aria-label="Build to make a code for"></select>
+        </div>
+        <div class="btnrow">
+          <button type="button" id="codeCopy">Copy</button>
+          <button type="button" id="codeLoad" class="primary">Load code</button>
+        </div>
+        <p class="meta" id="codeMsg" role="status"></p>
+      </div>
+      <div class="toolpart">
+        <h2>Batch compare</h2>
+        <p class="meta">Save several setups (e.g. pre-raid vs raid-buffed), then run them all: every build × race per setup, best race per build. "Add this run" keeps the results in the table as they are.</p>
+        <div class="btnrow">
+          <input id="batchName" type="text" placeholder="Setup name" aria-label="Setup name" maxlength="40">
+          <button type="button" id="batchAdd">Add current settings</button>
+          <button type="button" id="addRunBtn" title="Save the run you see in the table (its settings and results) as a frozen entry, to compare later runs against it">Add this run</button>
+          <button type="button" id="batchRun" class="primary">Sim batch</button>
+        </div>
+        <ol id="batchList" class="batchlist"></ol>
+        <p class="meta" id="batchStatus" role="status"></p>
+      </div>
+    </div>
+    <div class="scroll"><table id="batchOut" class="batchout"></table></div>
+  </details>
+  </div>
+  </div>
+  <!-- Round 177 (user): the welcome tour — a card on the first visit, then one step per part of the page (app/app.js). -->
+  <div class="tourspot" id="tourSpot" hidden></div>
+  <div class="tourcard" id="tourCard" role="dialog" aria-modal="false" aria-labelledby="tourTitle" hidden>
+    <div class="tourhead"><b id="tourTitle"></b><span class="meta" id="tourStep"></span></div>
+    <p id="tourText"></p>
+    <div class="btnrow"><button type="button" id="tourSkip" class="resetbtn">Skip tour</button><span class="tourgap"></span>
+      <button type="button" id="tourBack">Back</button><button type="button" id="tourNext" class="primary">Next</button></div>
+  </div>
+  <!-- Round 176 (user): the layout editor — tiles stand in for the boxes of the page; app/app.js keeps them and the page in step. -->
+  <dialog id="layoutDlg" class="layoutdlg" aria-labelledby="layoutTitle"><div class="lyin">
+    <div class="cardhead"><h2 id="layoutTitle">Page layout</h2><button type="button" id="layoutClose" class="primary">Done</button></div>
+    <p class="meta">Drag the boxes where you want them, or use the arrows — the page behind changes at once. Wide screens (2350 px and more) show two columns; narrower windows show one list. Kept in this browser.</p>
+    <div class="lygrid">
+      <section><h3>Wide screens · left</h3><ol class="lylist" id="ly_left" data-ly="left"></ol></section>
+      <section><h3>Wide screens · right</h3><ol class="lylist" id="ly_right" data-ly="right"></ol></section>
+      <section><h3>Narrower windows · top to bottom</h3><ol class="lylist" id="ly_stack" data-ly="stack"></ol></section>
+    </div>
+    <div class="btnrow"><button type="button" id="layoutReset" class="resetbtn">Back to the default layout</button><span class="meta" id="layoutNow"></span></div>
+  </div></dialog>
+  <p class="foot">Click a row for talents, stats, the DoT chart, per-spell numbers, race comparison and the full rotation log; the "+4 races" pill next to the race
+    (or Show all races above the table) shows the build's other races. Stat weights: DPS per 1 spell power; hit / crit / haste / Int shown as the spell power they are worth,
+    computed on each build's best race with common random numbers (hit/haste carry some noise). Spell Pierce weight: in the details.
+    Data: Wowhead Forever (beta 1.60.1).</p>
+
+  <section class="card gearcard" id="gear" aria-labelledby="gearTitle">
+    <div class="cardhead gbhead">
+      <h2 id="gearTitle">Gear builder</h2>
+      <button type="button" id="gbFold" class="resetbtn gbfold" aria-expanded="true" aria-controls="gear">Hide</button>
+      <label class="switch" for="gbOn" title="On: your stats in the Stats panel are a naked character plus the items and enchants here, and what you type there is added on top. Off: the Stats panel keeps its numbers and works as before."><input id="gbOn" type="checkbox"> Use this gear for my stats</label>
+      <label class="c" for="gbValFor" title="Each item's worth in spell power is worked out from this build's stat weights (the SP / Hit / Crit / Haste / Int columns of the results). Builds get stat weights with a Sim!">Value for <select id="gbValFor"></select></label>
+      <button type="button" id="gbClear" class="resetbtn gbclear" data-label="Take everything off" data-armed="Click again to empty every slot">Take everything off</button>
+    </div>
+    <p class="meta">Click a slot to put an item and its enchant in. <span id="gbDbInfo">The items come from the Wowhead Forever database</span>, best first for the build chosen under "Value for". Each slot that takes an enchant lists every enchant for it under the items. Something that is not listed yet: type it in yourself, or load a gear code made by the in-game addon. Your items are kept in this browser.</p>
+    <div class="btnrow gbcode">
+      <input id="gbCode" type="text" spellcheck="false" placeholder="WFG1:… gear code from the in-game addon" aria-label="Gear code">
+      <button type="button" id="gbCodeLoad" class="primary" title="Puts the items and enchants of a gear code into every slot (replacing what is there) and switches the gear builder on">Load gear code</button>
+      <button type="button" id="gbCodeMake" title="A gear code of what you wear here, copied to the clipboard">Make gear code</button>
+    </div>
+    <div class="btnrow gbsets">
+      <select id="gbSetSel" aria-label="Your saved gear sets"></select>
+      <button type="button" id="gbSetLoad" title="Puts the chosen set's items and enchants in every slot (replacing what is there) and switches the gear builder on">Load set</button>
+      <button type="button" id="gbSetDel" class="resetbtn" data-label="Delete set" data-armed="Click again to delete it">Delete set</button>
+      <input id="gbSetName" type="text" maxlength="40" placeholder="Name for what you wear now" aria-label="Name of the new gear set">
+      <button type="button" id="gbSetSave" title="Saves what you wear here (items and enchants) under this name, in this browser">Save as set</button>
+    </div>
+    <p class="meta" id="gbMsg" role="status"></p>
+    <div class="gbdoll">
+      <div class="gbcol" id="gbLeft"></div>
+      <div id="gbMid"></div>
+      <div class="gbcol" id="gbRight"></div>
+      <div id="gbWeap"></div>
+    </div>
+    <div class="gbedit" id="gbEdit" hidden></div>
+    <div class="gbtrk" id="gbTrinkets"></div>
+    <details class="gbopt" id="gbOpt"><summary>Best combination: try your favourites and bag items in every slot</summary><div id="gbOptBody"></div></details>
+  </section>
+</div>
+
+<script src="data/consumables.js"></script>
+<script src="data/config.js"></script>
+<script src="data/talents.js"></script>
+<script src="data/spells.js"></script>
+<script src="data/races.js"></script>
+<script src="data/builds.js"></script>
+<script src="data/trinkets.js"></script>
+<script src="data/icons.js"></script>
+<script src="data/tooltips.js"></script>
+<script src="engine/stats.js"></script>
+<script src="engine/spelltable.js"></script>
+<script src="engine/rng.js"></script>
+<script src="engine/resist.js"></script>
+<script src="engine/rotation.js"></script>
+<script src="engine/sim.js"></script>
+<script src="engine/settings-code.js"></script>
+<script src="engine/explain.js"></script>
+<script src="engine/custom-builds.js"></script>
+<script src="app/sim-pool.js"></script>
+<script src="data/default-results.js"></script>
+<script src="data/length-table.js"></script>
+<script src="data/items.js"></script>
+<script src="data/item-db.js"></script>
+<script src="app/gear-builder.js"></script>
+<script src="app/app.js"></script>

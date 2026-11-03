@@ -1,0 +1,24 @@
+// Round 169 tests (user: "i also want the build list to be more prominent so maybe have that up top", "the first top bar at the
+// top is kind of pointless", "maybe reposition or move certain settings"): the page order.
+(function () {
+  T.run('round 169: the build list comes first', function () {
+    var src = '';
+    try { var x = new XMLHttpRequest(); x.open('GET', '../index.html', false); x.send(); src = x.responseText; } catch (e) { /* file:// */ }
+    if (!src) { T.warn('index.html could not be read (file://)'); return; }
+    var at = function (s) { return src.indexOf(s); };
+    T.ok(at('id="buildPanel"') > at('</header>') && at('id="buildPanel"') < at('id="settings"'), 'the build list sits right under the header, above the settings');
+    // Round 177 (user): Sim! and the stat chips moved into the Sim bar right above the build list (it stays at the top).
+    T.ok(at('id="simBar"') < at('id="statbar"') && at('id="statbar"') < at('id="buildPanel"') && at('id="buildPanel"') < at('id="results"'), 'Sim! and the stat chips sit right above the build list (the Sim bar)');
+    T.ok(at('id="quickbar"') > at('id="buildPanel"') && at('id="quickbar"') < at('id="results"'), 'quick setup sits above the table');
+    T.ok(at('id="steps"') < 0, 'the old steps strip is gone');
+    T.ok(at('id="presetSel"') > at('id="charTitle"') && at('id="presetSel"') < at('id="settings"'), 'saved setups (presets) sit next to "Your character and the fight"');
+    T.ok(at('id="presetMsg"') > 0, '… with their own message line');
+    T.ok(at('id="compare"') < at('id="settings"') && at('id="editor"') > at('id="settings"'), 'result tools under the list; build editor below the settings');
+    // Round 170 (user: "move that window to the very bottom"); round 174: it sits in the left column (wide screens), and CSS order
+    // puts it last when everything stacks.
+    T.ok(at('id="lenSheet"') < at('class="colside"') && src.indexOf('#lenSheet { --stack: 9; }') >= 0, 'Racials by fight length is the last box on the page (stacked; round 176: the layout\'s default)');
+    // Round 171 (user: call it "Racials by fight length")
+    T.ok(/<summary>Racials by fight length </.test(src), 'its title: Racials by fight length');
+    T.ok(/\.buildpanel \{[^}]*minmax\(0, 1fr\)/.test(src), 'the build list stays inside a phone screen (its wide table scrolls)');
+  });
+})();
