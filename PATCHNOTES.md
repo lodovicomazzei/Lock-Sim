@@ -3,6 +3,14 @@
 What each version added or changed, newest first. Version = the version of the
 [live page](https://claude.ai/artifact/WzHGwM25MtG9kXFG8rcW9W).
 
+## Local update v3 — November 10, 2026 Affliction hotfix
+- Soul Siphon counts only your Corruption, Siphon Life and Bane of Agony. Curses, Bane of Doom and Wrack itself give no stacks.
+- Wrack's own damage is 30% lower: level-60 tick formula `60.2 + 0.2002 × SP`, before talents and other modifiers.
+- Wrack's former 10% periodic damage bonus is removed. During the channel the three named DoTs tick twice as fast on that target, keep their original expiration times, and retain partial tick progress when the channel stops.
+- Main simulator, 3D combat, tooltips, spell explanations and cached result tables are updated together. Amplify Curse APL and Open in 3D from v2 are retained.
+- Main-page scripts and workers have new cache versions so existing visitors receive the new mechanics after deployment.
+- Sources and modelling notes: [UPDATE-v3.md](UPDATE-v3.md).
+
 ## v159
 - Amplify Curse can be selected in the simple priority and Advanced (APL), with its own conditions. Explicit entries control its use; builds without one keep the previous automatic use with Bane of Agony.
 - The build editor's **Open in 3D** button transfers the complete build and current settings directly into the bundled practice room.

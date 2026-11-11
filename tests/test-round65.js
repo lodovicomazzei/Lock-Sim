@@ -1,4 +1,4 @@
-// Round 65 tests: Wrack's debuff (A18) checked tick by tick, and the reference builds (SM Ruin, DS Ruin, Wrack DS → Wrack Succubus in round 77).
+// Round 65 tests: Wrack's channel effects (A18, updated November 10) checked tick by tick, and the reference builds (SM Ruin, DS Ruin, Wrack DS → Wrack Succubus in round 77).
 // Round 66: no built-in pin flag any more — every build is shown by default (cut-off 0); pins are per browser (page).
 (function () {
   function det() {
@@ -12,7 +12,7 @@
   function tb(rot, t) { return { key: 't65', short: 't', name: 't', notes: '', talents: t || {}, pet: null, sacrifice: null, oil: 'none', rotation: rot }; }
 
   T.run('round 65: Wrack and reference builds', function () {
-    T.group('Wrack: +10% on Corruption and Bane of Agony only while it channels (spell data 1316697)');
+    T.group('Wrack: faster ticks with unchanged damage per tick (November 10)');
     var c = det(), b = tb(['baneOfAgony', 'corruption', 'siphonLife', 'wrack'], { siphonLife: 1, wrack: 1 });
     var st = WL.computeStats(b, 'human', c), tab = WL.buildSpellTable(b, st, c), sp = tab.wrack.sp;
     var r = WL.simulateOnce(b, 'human', c, { duration: 60, log: true, seed: 1 });
@@ -24,22 +24,22 @@
     });
     function during(t) { return wins.some(function (w) { return t > w[0] + 1e-6 && t <= w[1] + 1e-6; }); }
     var ticks = function (k) { return r.log.filter(function (e) { return e.type === 'tick' && e.spell === k; }); };
-    var corr = Math.round(57 + 0.2 * sp), corrW = Math.round((57 + 0.2 * sp) * 1.10);
+    var corr = Math.round(57 + 0.2 * sp), corrW = Math.round(57 + 0.2 * sp);
     var cIn = ticks('corruption').filter(function (e) { return during(e.t); }), cOut = ticks('corruption').filter(function (e) { return !during(e.t); });
-    T.ok(cIn.length > 2 && cIn.every(function (e) { return e.dmg === corrW; }), 'Corruption ticks during Wrack = ' + corrW + ' (× 1.10; ' + cIn.length + ' ticks)');
+    T.ok(cIn.length > 2 && cIn.every(function (e) { return e.dmg === corrW; }), 'Corruption ticks during Wrack = ' + corrW + ' (unchanged damage; ' + cIn.length + ' ticks)');
     T.ok(cOut.length > 0 && cOut.every(function (e) { return e.dmg === corr; }), 'Corruption ticks outside Wrack = ' + corr + ' (' + cOut.length + ' ticks)');
     var boaIn = ticks('baneOfAgony').filter(function (e) { return during(e.t); });
     var avg = 46 + 0.133 * sp, ramp = [0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1.5, 1.5, 1.5, 1.5];
-    T.ok(boaIn.length > 2 && boaIn.every(function (e) { return ramp.some(function (f) { return e.dmg === Math.round(avg * f * 1.10); }); }), 'Bane of Agony ticks during Wrack = ramp × avg × 1.10');
+    T.ok(boaIn.length > 2 && boaIn.every(function (e) { return ramp.some(function (f) { return e.dmg === Math.round(avg * f); }); }), 'Bane of Agony ticks during Wrack = ramp × avg, without the old 10% multiplier');
     var sl = ticks('siphonLife');
-    // Round 118 (user): Wrack's +10% also applies to Siphon Life and Bane of Doom (the tooltip's "your other Shadow damage over time effects").
+    // November 10 replaces the old multiplier with faster ticks of the three named DoTs.
     var slIn = sl.filter(function (e) { return during(e.t); }), slOut = sl.filter(function (e) { return !during(e.t); });
-    T.ok(slIn.length > 0 && slIn.every(function (e) { return e.dmg === Math.round((41 + 0.05 * sp) * 1.10); }), 'Siphon Life ticks during Wrack = ' + Math.round((41 + 0.05 * sp) * 1.10) + ' (× 1.10; ' + slIn.length + ' ticks)');
+    T.ok(slIn.length > 0 && slIn.every(function (e) { return e.dmg === Math.round(41 + 0.05 * sp); }), 'Siphon Life ticks during Wrack = ' + Math.round(41 + 0.05 * sp) + ' (unchanged damage; ' + slIn.length + ' ticks)');
     T.ok(slOut.length > 0 && slOut.every(function (e) { return e.dmg === Math.round(41 + 0.05 * sp); }), 'Siphon Life ticks outside Wrack = ' + Math.round(41 + 0.05 * sp) + ' (' + slOut.length + ' ticks)');
-    T.ok(ticks('wrack').every(function (e) { return e.dmg === Math.round(86 + 0.286 * sp); }), 'Wrack ticks = 86 + 0.286 × SP = ' + Math.round(86 + 0.286 * sp));
+    T.ok(ticks('wrack').every(function (e) { return e.dmg === Math.round(60.2 + 0.2002 * sp); }), 'Wrack ticks = 60.2 + 0.2002 × SP = ' + Math.round(60.2 + 0.2002 * sp));
     var bi = tb(['wrack'], { wrack: 1, improvedDrains: 3 }), ti = WL.buildSpellTable(bi, WL.computeStats(bi, 'human', c), c);
-    T.near(ti.wrack.tickDmg, 86 + 0.286 * ti.wrack.sp, 1e-9, 'Improved Drains no longer increases Wrack damage');
-    T.eq(WL.SPELLS.wrack.debuffSpells.slice().sort().join(','), 'baneOfAgony,baneOfDoom,corruption,siphonLife', 'affected spells: Corruption, Bane of Agony, Siphon Life, Bane of Doom (round 118)');
+    T.near(ti.wrack.tickDmg, 60.2 + 0.2002 * ti.wrack.sp, 1e-9, 'Improved Drains no longer increases Wrack damage');
+    T.eq(WL.SPELLS.wrack.dotSpells.slice().sort().join(','), 'baneOfAgony,corruption,siphonLife', 'accelerated spells: Corruption, Bane of Agony and Siphon Life only');
 
     T.group('reference builds (user, round 65); shown by default (round 66)');
     var want = { sm_ruin_classic: '30/0/21', wrack_succubus: '33/0/18' };   // round 149: Malediction's points moved (patch 2026-10-16), then the search after it   // DS Ruin (22/11/18) taken off the sheet in round 110   // SM Ruin 33/0/18 until round 83

@@ -1,5 +1,7 @@
 # Patch notes — Forever Warlocking
 
+Combined-copy update v3 (2026-11-11): both interfaces include the November 10 Wrack / Soul Siphon hotfix. Wrack's own damage is 30% lower. Corruption, Siphon Life and Bane of Agony tick twice as fast on its target during the channel, retain partial progress when interrupted, and keep their original expiry. Soul Siphon counts only those three DoTs. See [UPDATE-v3.md](../UPDATE-v3.md) for sources and modelling notes.
+
 Build-transfer update: use **Open in 3D** in the main simulator's build editor to load a saved or newly edited build directly. Explicit Amplify Curse APL entries are supported by the shared engine and practice action bar.
 
 Combined-copy update (2026-11-03): synchronized the shared simulator with the bundled Wrack update (86 base damage per second, 0.286 spell-power coefficient, and no Improved Drains bonus). The SIM Open button returns to the bundled main simulator. The original version history follows.

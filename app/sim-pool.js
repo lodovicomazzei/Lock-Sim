@@ -81,4 +81,4 @@ WL.makeSimPool = function (workerUrl, size) {
   function mode() { return state === 'ready' ? 'workers (' + workers.length + ')' : state === 'page' ? 'page' : 'starting'; }
   return { run: run, mode: mode, start: start };
 };
-WL.SimPool = WL.makeSimPool('engine/worker.js');
+WL.SimPool = WL.makeSimPool('engine/worker.js?v=wrack-nov10-1');

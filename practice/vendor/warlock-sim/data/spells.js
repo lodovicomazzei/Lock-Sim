@@ -5,7 +5,7 @@
 // options.bookRanks (Fight & pets → Options). Direct damage is simulated at its average (no min–max roll).
 // Fields:
 //   school   'shadow' | 'fire'
-//   tree     spell family used by talents ("Destruction spells" = Ruin/Agonizing Flames/Cataclysm; "Affliction" = Soul Siphon counting)
+//   tree     spell family used by talents (Destruction or Affliction)
 //   kind     'direct' | 'dot' | 'channel' | 'hybrid' (direct part + dot) | 'utility'
 //   base/coef            direct damage: base + coef * SP
 //   tickBase/tickCoef    per-tick periodic damage: tickBase + tickCoef * SP
@@ -68,8 +68,8 @@ WL.SPELLS = {
   drainSoul:    { id: 11675,   name: 'Drain Soul',     school: 'shadow', tree: 'affliction',  kind: 'channel', drain: true, improvedDrains: true,
                   tickBase: 84, tickCoef: 0.10, tickEvery: 3, duration: 15, cast: 0, cost: 290, range: 30 },
   wrack:        { id: 1316697, name: 'Wrack',          school: 'shadow', tree: 'affliction',  kind: 'channel', drain: true,
-                  tickBase: 86, tickCoef: 0.286, tickEvery: 1, duration: 6, cast: 0, cost: 200, range: 30, talent: 'wrack',
-                  debuffPct: 10, debuffSpells: ['corruption', 'baneOfAgony', 'siphonLife', 'baneOfDoom'] },   // [A18]
+                  tickBase: 60.2, tickCoef: 0.2002, tickEvery: 1, duration: 6, cast: 0, cost: 200, range: 30, talent: 'wrack',
+                  dotSpeed: 2, dotSpells: ['corruption', 'baneOfAgony', 'siphonLife'] },   // Nov 10: damage ×0.7; tooltip rounds 60.2 to 60. [A18]
   deathCoil:    { id: 17926,   name: 'Death Coil',     school: 'shadow', tree: 'affliction',  kind: 'direct',
                   base: 454, coef: 0.214, cast: 0, cost: 600, range: 30, cd: 120, projectile: true, leech: 1 },
   curseOfElements: { id: 1311680, name: 'Curse of the Elements', school: 'shadow', tree: 'affliction', kind: 'utility',
@@ -114,7 +114,7 @@ WL.PANDEMIC_SPELLS = ['corruption', 'baneOfAgony', 'baneOfDoom', 'drainSoul', 'd
 // Spells that proc Nightfall (talent text).
 WL.NIGHTFALL_SPELLS = ['corruption', 'drainSoul', 'drainLife', 'wrack'];
 // Affliction effects counted by Soul Siphon (other than the drain itself). [A19]
-WL.SOUL_SIPHON_EFFECTS = ['corruption', 'baneOfAgony', 'baneOfDoom', 'siphonLife', 'curseOfElements'];
+WL.SOUL_SIPHON_EFFECTS = ['corruption', 'siphonLife', 'baneOfAgony'];
 
 // Weapon stones (Create Spellstone R3 / Create Firestone R4): a build's `oil` key (the name is from when they were
 // taken to share the weapon-oil slot). Since round 86 they stack with a weapon oil from the consumables. [A33]

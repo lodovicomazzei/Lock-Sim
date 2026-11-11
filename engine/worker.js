@@ -7,8 +7,9 @@
 // No cfg → the worker's own WL.DEFAULT_CONFIG as shipped (no n → its weightIterations) (the tests use it: the test page changes its own copy).
 // Message out on start: { ready: true } once the engine is loaded.
 self.window = self;
-importScripts('../data/consumables.js', '../data/config.js', '../data/talents.js', '../data/spells.js', '../data/races.js',
-  '../data/builds.js', '../data/trinkets.js', 'stats.js', 'spelltable.js', 'rng.js', 'resist.js', 'rotation.js', 'sim.js', 'custom-builds.js');
+importScripts.apply(null, ['../data/consumables.js', '../data/config.js', '../data/talents.js', '../data/spells.js', '../data/races.js',
+  '../data/builds.js', '../data/trinkets.js', 'stats.js', 'spelltable.js', 'rng.js', 'resist.js', 'rotation.js', 'sim.js', 'custom-builds.js']
+  .map(function (file) { return file + '?v=wrack-nov10-1'; }));
 
 self.onmessage = function (e) {
   var j = e.data;

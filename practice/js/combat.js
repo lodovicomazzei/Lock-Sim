@@ -310,10 +310,9 @@ export function createCombat(opts) {
     if (s.school === 'shadow' && debuff(ti, 'isb')) m *= 1 + tv('improvedShadowBolt', 'debuffPct') / 100;
     if (s.school === 'shadow' && buff('snfShadow')) m *= 1 + tv('shadowAndFlame', 'schoolPct') / 100;
     if (s.school === 'fire' && buff('snfFire')) m *= 1 + tv('shadowAndFlame', 'schoolPct') / 100;
-    if (periodic && S.channel && S.channel.key === 'wrack' && S.channel.target === ti && SPELLS.wrack.debuffSpells.indexOf(key) >= 0) m *= 1 + SPELLS.wrack.debuffPct / 100;
     if (s.drain && tv('soulSiphon')) {
       let n = 0;
-      WL.SOUL_SIPHON_EFFECTS.forEach(function (e) { if (e === 'curseOfElements' ? debuff(ti, 'coe') : dotLeft(e, ti) > 0) n++; });
+      WL.SOUL_SIPHON_EFFECTS.forEach(function (e) { if (dotLeft(e, ti) > 0) n++; });
       m *= 1 + Math.min(n * tv('soulSiphon', 'perEffectPct'), tv('soulSiphon', 'maxPct')) / 100;
     }
     return m;
@@ -415,6 +414,27 @@ export function createCombat(opts) {
     }
   }
 
+  function queueFastDot(ti, key, d) {
+    d.rev = (d.rev || 0) + 1;
+    if (d.nextTick <= d.expires + EPS) push({ t: d.nextTick, o: 0, type: 'dotTick', key: key, target: ti, inst: d.inst, rev: d.rev });
+  }
+  // Only the channel's actual target is accelerated. Keep earned tick progress on every kind of interruption.
+  function setChannel(c) {
+    const oldTarget = S.channel && S.channel.key === 'wrack' ? S.channel.target : 0;
+    const newTarget = c && c.key === 'wrack' ? c.target : 0;
+    S.channel = c;
+    if (oldTarget === newTarget) return;
+    for (const ti of [oldTarget, newTarget]) {
+      if (!ti) continue;
+      const rate = ti === newTarget ? SPELLS.wrack.dotSpeed : 1;
+      SPELLS.wrack.dotSpells.forEach(function (key) {
+        const d = T[ti].dots[key];
+        if (!d || d.expires < S.t - EPS) return;
+        d.nextTick = S.t + Math.max(0, d.nextTick - S.t) * d.rate / rate;
+        d.rate = rate; queueFastDot(ti, key, d);
+      });
+    }
+  }
   function applyDot(ti, key, snap) {
     const s = SPELLS[key], e = table[key], id = ++inst, t = T[ti];
     if (s.bane) { noteClip(ti, 'baneOfAgony', key); noteClip(ti, 'baneOfDoom', key); } else noteClip(ti, key, key);
@@ -422,14 +442,18 @@ export function createCombat(opts) {
       delete t.dots.baneOfAgony; delete t.dots.baneOfDoom;
       if (!check && S.havoc && S.havoc.target === ti) S.havoc = null;
     }
-    t.dots[key] = { inst: id, applied: S.t, expires: S.t + s.duration, ticks: e.ticks, snap: snap };
-    for (let i = 1; i <= e.ticks; i++) push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTick', key: key, target: ti, inst: id, i: i - 1 });
+    const d = t.dots[key] = { inst: id, applied: S.t, expires: S.t + s.duration, tick: 0, ticks: e.ticks, snap: snap };
+    if (SPELLS.wrack.dotSpells.indexOf(key) >= 0) {
+      d.rate = S.channel && S.channel.key === 'wrack' && S.channel.target === ti ? SPELLS.wrack.dotSpeed : 1;
+      d.nextTick = S.t + s.tickEvery / d.rate; queueFastDot(ti, key, d);
+      push({ t: d.expires, o: 1, type: 'dotExpire', key: key, target: ti, inst: id });
+    } else for (let i = 1; i <= e.ticks; i++) push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTick', key: key, target: ti, inst: id, i: i - 1 });
   }
 
   function periodicTick(key, snap, i, ti) {
     const s = SPELLS[key], e = table[key];
     let amount = (s.tickBase + s.tickCoef * spNow(e)) * e.periodicMult * liveMult(key, true, ti) * (snap.castMult || 1);
-    if (s.ramp) amount *= s.ramp[i];
+    if (s.ramp) amount *= s.ramp[Math.min(i, s.ramp.length - 1)];
     amount *= vulnMult(s.school, ti);
     const crit = R.crit() * 100 < e.critPct;
     if (crit) amount *= e.critMult;
@@ -702,7 +726,7 @@ export function createCombat(opts) {
       if (!S.over) {
         if (ti === 1 || s.aoe) jowProc();
         const id = ++inst;
-        S.channel = { key: key, inst: id, target: ti, snap: { castMult: 1 }, start: S.t, end: S.t + s.duration };
+        setChannel({ key: key, inst: id, target: ti, snap: { castMult: 1 }, start: S.t, end: S.t + s.duration });
         for (let i = 1; i <= e.ticks; i++) push({ t: S.t + i * s.tickEvery, o: 0, type: 'chanTick', key: key, inst: id, i: i - 1 });
       }
     } else if (castT > EPS) {
@@ -764,7 +788,7 @@ export function createCombat(opts) {
       emit({ type: 'interrupt', key: key, reason: reason });
     } else if (S.channel) {
       const key = S.channel.key;
-      S.channel = null;
+      setChannel(null);
       emit({ type: 'interrupt', key: key, reason: reason, channel: true });
     }
   }
@@ -1002,23 +1026,33 @@ export function createCombat(opts) {
     } else if (ev.type === 'dotTick') {
       const d = T[ev.target].dots[ev.key];
       if (!d || d.inst !== ev.inst) return;              // refreshed, consumed, or the target is dead
-      periodicTick(ev.key, d.snap, ev.i, ev.target);
-      if (!S.over && ev.i === d.ticks - 1 && T[ev.target].dots[ev.key] === d) delete T[ev.target].dots[ev.key];
+      if (ev.rev != null) {
+        if (ev.rev !== d.rev || S.t > d.expires + EPS) return;
+        periodicTick(ev.key, d.snap, d.tick++, ev.target);
+        if (!S.over && T[ev.target].dots[ev.key] === d) {
+          d.nextTick = S.t + SPELLS[ev.key].tickEvery / d.rate; queueFastDot(ev.target, ev.key, d);
+        }
+      } else {
+        periodicTick(ev.key, d.snap, ev.i, ev.target);
+        if (!S.over && ev.i === d.ticks - 1 && T[ev.target].dots[ev.key] === d) delete T[ev.target].dots[ev.key];
+      }
+    } else if (ev.type === 'dotExpire') {
+      if (T[ev.target].dots[ev.key] && T[ev.target].dots[ev.key].inst === ev.inst) delete T[ev.target].dots[ev.key];
     } else if (ev.type === 'dmgTaken') {
       takeHit();
       push({ t: S.t + HIT, o: 1, type: 'dmgTaken' });
     } else if (ev.type === 'chanEnd') {                  // a channel shortened by a hit ends early
       const c = S.channel;
       if (!c || c.inst !== ev.inst || c.end > S.t + EPS) return;
-      S.channel = null;
+      setChannel(null);
     } else if (ev.type === 'chanTick') {
       const c = S.channel;
       if (!c || c.inst !== ev.inst) return;              // stopped
       if (ev.t > c.end + EPS) return;                    // cut off by a hit; the channel's end closes it
       if (SPELLS[ev.key].aoe) aoeTick(ev.key, ev.i, c.target); else periodicTick(ev.key, c.snap, ev.i, c.target);
-      if (!S.over && S.channel === c && ev.i === table[ev.key].ticks - 1) S.channel = null;
+      if (!S.over && S.channel === c && ev.i === table[ev.key].ticks - 1) setChannel(null);
       else if (!S.over && S.channel === c && SPELLS[ev.key].selfDamage && S.health <= selfTick(ev.key)) {   // the next tick would kill you
-        S.channel = null;
+        setChannel(null);
         emit({ type: 'interrupt', key: ev.key, reason: 'health', channel: true });
         S.decideSeq = order++;
       }

@@ -36,7 +36,8 @@ $talOverride = @{
   'destructiveReach' = @(10, 20 | ForEach-Object { "Increases the range of your Destruction spells by $_%." })   # was 'your damaging spells'
   # Patch 2026-11-02: Drain Mana added, Wrack removed; Wrack's coefficient doubled.
   'improvedDrains' = @(7, 13, 20 | ForEach-Object { "Increases health drained or damage done by your Drain Life and Drain Soul spells, and the amount of Mana drained by your Drain Mana spell, by $_%." })
-  'wrack' = @('Tears the target apart from within, dealing (28.6% of Spell Power) Shadow damage every 1 sec and increasing the damage they take from your other Shadow damage over time effects by 10%. Lasts 6 sec.')
+  'soulSiphon' = @(1, 2, 3 | ForEach-Object { "Increases the damage done or health drained by your Drain Life, Drain Soul, and Wrack spells by $(4 * $_)% per each of your Corruption, Siphon Life, and Bane of Agony effects active on the target, up to a maximum increase of $(12 * $_)%." })
+  'wrack' = @('Tears the target apart from within for 6 sec, inflicting 60 Shadow damage (+20.02% of Spell Power) every 1 sec. While channeling, your Siphon Life, Corruption, and Bane of Agony effects on the target deal their periodic damage 100% faster.')
 }
 $n = 0
 foreach ($tree in '301', '302', '303') {
@@ -76,7 +77,7 @@ $override = @{
   # AoE channels (round 100): values of the triggered damage spells (11682 / 1282385), Effect Value - 1.
   '11684' = 'Ignites the area surrounding the caster, causing 206 Fire damage (+2.2% of Spell Power) to himself and to all nearby enemies every 1 sec. Lasts 15 sec.'
   '11678' = 'Calls down a fiery rain to burn enemies in the area of effect for 880 Fire damage (+33.2% of Spell Power) over 8 sec.'
-  '1316697' = 'Tears the target apart from within, dealing (28.6% of Spell Power) Shadow damage every 1 sec and increasing the damage they take from your other Shadow damage over time effects by 10%. Lasts 6 sec.'
+  '1316697' = 'Tears the target apart from within for 6 sec, inflicting 60 Shadow damage (+20.02% of Spell Power) every 1 sec. While channeling, your Siphon Life, Corruption, and Bane of Agony effects on the target deal their periodic damage 100% faster.'
 }
 $s = 0; $missing = @(); $o = 0
 foreach ($id in ($ids | Select-Object -Unique)) {

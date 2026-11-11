@@ -306,7 +306,7 @@ tooltip says 246 to 274). A spell's "family" decides which talents count it as a
 | Siphon Life | Shadow | Affliction | 10 ticks of 41 + 0.05 × SP, one every 3 s | instant | 365 | — | 30 yd |
 | Drain Life | Shadow | Affliction | 5 ticks of 51 + 0.1 × SP, one every 1 s | channel, 5 s | 300 | — | 20 yd |
 | Drain Soul | Shadow | Affliction | 5 ticks of 84 + 0.1 × SP, one every 3 s | channel, 15 s | 290 | — | 30 yd |
-| Wrack | Shadow | Affliction | 6 ticks of 86 + 0.286 × SP, one every 1 s | channel, 6 s | 200 | — | 30 yd |
+| Wrack | Shadow | Affliction | 6 ticks of 60.2 + 0.2002 × SP, one every 1 s | channel, 6 s | 200 | — | 30 yd |
 | Death Coil | Shadow | Affliction | 454 + 0.214 × SP | instant | 600 | 120 s | 30 yd |
 | Curse of the Elements | Shadow | Affliction | — | instant | 200 | — | 30 yd |
 | Amplify Curse | Shadow | Affliction | — | instant | 0 | 180 s | self |
@@ -331,7 +331,7 @@ tooltip says 246 to 274). A spell's "family" decides which talents count it as a
 - **Siphon Life.** A DoT that heals you for the damage it deals.
 - **Drain Life.** Channel; heals you for the damage it deals.
 - **Drain Soul.** Listed because talents name it. No priority action casts it.
-- **Wrack.** Channel. While it runs, the ticks of your Corruption, Bane of Agony, Siphon Life and Bane of Doom deal 10% more. It counts as a drain for Soul Siphon, Fel Concentration and Nightfall, but no longer for Improved Drains.
+- **Wrack.** Six-second channel. Your Corruption, Siphon Life and Bane of Agony on that target tick twice as fast during the channel. Their durations stay unchanged; tick progress is retained on interruption. No periodic damage multiplier. Counts as a drain for Soul Siphon, Fel Concentration and Nightfall, but not Improved Drains.
 - **Death Coil.** Heals you for the damage it deals. Projectile.
 - **Curse of the Elements.** Has to hit. On the target for 5 minutes: it takes 10% more damage from your spells, your demon's spells and your explosives, and its resistance drops by 75 (which removes the level resistance).
 - **Amplify Curse.** Off the global cooldown. The next Bane of Agony cast within 30 s deals 50% more damage on every tick. An explicit priority/APL or fight-timeline entry controls when it is used; without one it is automatic with Bane of Agony.
@@ -380,7 +380,7 @@ Every talent of the three trees. "Talent group" and "aura" are explained in sect
 | Nightfall | 2 | chance per tick 2 / 4% | Every tick of Corruption, Drain Soul, Drain Life and Wrack has this chance to give Shadow Trance for 10 s: your next Shadow Bolt has no cast time (it still costs its mana and a global cooldown). |
 | Curse of Exhaustion | 1 | — | Not simulated (a movement slow). |
 | Siphon Life | 1 | — | Gives the spell Siphon Life. |
-| Soul Siphon | 3 | per effect +4 / 8 / 12%; maximum +12 / 24 / 36% | Multiplies the ticks of Drain Life, Drain Soul and Wrack by 1 + this much for each of these on the target: Corruption, Bane of Agony, Bane of Doom, Siphon Life, Curse of the Elements - up to the maximum. A multiplier of its own. |
+| Soul Siphon | 3 | per effect +4 / 8 / 12%; maximum +12 / 24 / 36% | Multiplies the ticks of Drain Life, Drain Soul and Wrack by 1 + this much for each of your Corruption, Siphon Life and Bane of Agony on the target, up to the maximum. Bane of Doom, curses and Wrack itself do not count. |
 | Shadow Mastery | 5 | Shadow damage +2 / 4 / 6 / 8 / 10% | Adds to the direct and the periodic talent group of every Shadow spell of yours. Not applied to Touch of the Grave or to pets. |
 | Wrack | 1 | — | Gives the spell Wrack. |
 <!-- /gen:talents-affliction -->

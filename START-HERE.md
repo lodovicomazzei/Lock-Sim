@@ -7,7 +7,7 @@ This package contains both original interfaces by XNWLK, connected as one site:
 - The main page's **Forever Warlocking** link opens your own practice room. The practice room's **Warlock SIM → Open** button returns to your main simulator.
 - Sharing a setup from your main simulator creates a link to your own hosted copy.
 
-Both use the confirmed November 2, 2026 Wrack changes: 86 base damage per second at level 60, a 0.286 spell-power coefficient per one-second tick, and no Improved Drains damage bonus. The other November 2 class changes have not been added. Supplied builds and rotations have not been re-optimized for the buff.
+Both include the November 10, 2026 Wrack and Soul Siphon changes. Wrack's own damage is reduced by 30% (60.2 base + 0.2002 × Shadow spell power per tick; the tooltip rounds the base to 60). It makes Corruption, Siphon Life and Bane of Agony tick twice as fast on its target, without shortening their duration. Earned tick progress is retained when the channel stops. Soul Siphon counts only those three DoTs. Improved Drains still does not boost Wrack. Other class changes are outside this update; supplied builds and rotations have not been re-optimized.
 
 Original projects and credits:
 
@@ -41,7 +41,7 @@ To play a custom build, open it in the main simulator's Build editor and click *
 
 Amplify Curse is selectable in the simple priority and Advanced (APL). If you add it, that entry's conditions control when it is used. If you leave it out, the previous automatic use with Bane of Agony continues.
 
-1. Open the main address and check that the build ranking appears. Run **Sim!** and open **Wrack Succubus** to inspect its spell details. Wrack's base tick formula should be `86 + 0.286 × Shadow spell power` before modifiers.
+1. Open the main address and check that the header says **Wrack / Soul Siphon: 10 Nov 2026**. Run **Sim!** and open **Wrack Succubus** to inspect its spell details. Wrack's base tick formula should be `60.2 + 0.2002 × Shadow spell power` before modifiers.
 2. Click **Forever Warlocking**. The 3D room, character and spell bar should appear. Choose a build and cast on a dummy.
 3. Use the practice room's **Warlock SIM → Open** button to return to your simulator.
 4. Create a share link from the main page and verify it starts with your own site address.

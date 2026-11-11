@@ -47,7 +47,11 @@ const groupedAmp = JSON.parse(JSON.stringify(manualAmp));
 groupedAmp.key = 'check_grouped_amplify'; delete groupedAmp.actWhen.amplifyCurse;
 groupedAmp.rules = [{ spell: 'amplifyCurse', when: { t: 'fight', what: 'elapsed', op: '>=', v: 10 } }];
 groupedAmp.groups = { cooldowns: ['rule:0'] }; groupedAmp.rotation[0] = 'group:cooldowns';
-const checkedBuilds = WL.BUILDS.concat([manualAmp, groupedAmp]);
+const sustainedWrack = JSON.parse(JSON.stringify(manualAmp));
+sustainedWrack.key = 'check_sustained_wrack';
+sustainedWrack.rotation = ['amplifyCurse', 'corruption', 'siphonLife', 'baneOfAgony', 'wrack'];
+delete sustainedWrack.actWhen;
+const checkedBuilds = WL.BUILDS.concat([manualAmp, groupedAmp, sustainedWrack]);
 
 function withFiller(build, filler) {
   if (!filler) return build;

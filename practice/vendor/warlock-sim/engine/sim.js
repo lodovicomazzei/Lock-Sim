@@ -198,11 +198,9 @@ window.WL = window.WL || {};
       if (s.school === 'shadow' && S.buff('isb')) m *= 1 + tv('improvedShadowBolt', 'debuffPct') / 100;  // [A20]
       if (s.school === 'shadow' && S.buff('snfShadow')) m *= 1 + tv('shadowAndFlame', 'schoolPct') / 100; // [A22]
       if (s.school === 'fire' && S.buff('snfFire')) m *= 1 + tv('shadowAndFlame', 'schoolPct') / 100;
-      if (periodic && S.channel && S.channel.key === 'wrack' && SPELLS.wrack.debuffSpells.indexOf(key) >= 0)
-        m *= 1 + SPELLS.wrack.debuffPct / 100;                                                        // [A18]
       if (s.drain && tv('soulSiphon')) {                                                                 // [A19]
         var n = 0;
-        WL.SOUL_SIPHON_EFFECTS.forEach(function (e) { if (e === 'curseOfElements' ? S.buff('coe') : S.dotLeft(e) > 0) n++; });
+        WL.SOUL_SIPHON_EFFECTS.forEach(function (e) { if (S.dotLeft(e) > 0) n++; });
         m *= 1 + Math.min(n * tv('soulSiphon', 'perEffectPct'), tv('soulSiphon', 'maxPct')) / 100;
       }
       return m;
@@ -631,11 +629,33 @@ window.WL = window.WL || {};
       scheduleDecide(Math.max(S.busyUntil, S.gcdReady));
     }
 
+    // Wrack changes tick progress, not expiry. Reschedule the next tick at each channel transition, retaining
+    // fractional progress when it ends, clips or is cut by pushback. Revisions invalidate the old queued event.
+    function queueFastDot(key, d, ti) {
+      d.rev = (d.rev || 0) + 1;
+      if (d.nextTick <= d.expires + EPS) H.push({ t: d.nextTick, o: 0, type: ti > 1 ? 'dotTickX' : 'dotTick', ti: ti, key: key, inst: d.inst, rev: d.rev });
+    }
+    function setChannel(c) {
+      var wasWrack = S.channel && S.channel.key === 'wrack';
+      S.channel = c;
+      var rate = c && c.key === 'wrack' ? SPELLS.wrack.dotSpeed : 1;
+      if (!!wasWrack === !!(c && c.key === 'wrack')) return;
+      SPELLS.wrack.dotSpells.forEach(function (key) {
+        var d = S.dots[key];
+        if (!d || d.expires < S.t - EPS) return;
+        d.nextTick = S.t + Math.max(0, d.nextTick - S.t) * d.rate / rate;
+        d.rate = rate; queueFastDot(key, d);
+      });
+    }
     function applyDot(key, snap) {
       var s = SPELLS[key], e = table[key], id = ++inst;
       if (s.bane) { delete S.dots.baneOfAgony; delete S.dots.baneOfDoom; }                               // one Bane per target
-      S.dots[key] = { inst: id, applied: S.t, expires: S.t + s.duration, tick: 0, ticks: e.ticks, snap: snap };
-      for (var i = 1; i <= e.ticks; i++) H.push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTick', key: key, inst: id, i: i - 1 });
+      var d = S.dots[key] = { inst: id, applied: S.t, expires: S.t + s.duration, tick: 0, ticks: e.ticks, snap: snap };
+      if (SPELLS.wrack.dotSpells.indexOf(key) >= 0) {
+        d.rate = S.channel && S.channel.key === 'wrack' ? SPELLS.wrack.dotSpeed : 1;
+        d.nextTick = S.t + s.tickEvery / d.rate; queueFastDot(key, d);
+        H.push({ t: d.expires, o: 1, type: 'dotExpire', key: key, inst: id });
+      } else for (var i = 1; i <= e.ticks; i++) H.push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTick', key: key, inst: id, i: i - 1 });
     }
 
     // ---------- extra targets (multi-DoT, round 27; per-target CoE / ISB, round 39) ----------
@@ -652,8 +672,11 @@ window.WL = window.WL || {};
     }
     function applyDotX(ti, key, snap) {
       var s = SPELLS[key], e = table[key], id = ++inst;
-      S.xdots[ti][key] = { inst: id, applied: S.t, expires: S.t + s.duration, ticks: e.ticks, snap: snap };
-      for (var i = 1; i <= e.ticks; i++) H.push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTickX', ti: ti, key: key, inst: id, i: i - 1 });
+      var d = S.xdots[ti][key] = { inst: id, applied: S.t, expires: S.t + s.duration, tick: 0, ticks: e.ticks, snap: snap };
+      if (SPELLS.wrack.dotSpells.indexOf(key) >= 0) {
+        d.rate = 1; d.nextTick = S.t + s.tickEvery; queueFastDot(key, d, ti);
+        H.push({ t: d.expires, o: 1, type: 'dotExpire', ti: ti, key: key, inst: id });
+      } else for (var i = 1; i <= e.ticks; i++) H.push({ t: S.t + i * s.tickEvery, o: 0, type: 'dotTickX', ti: ti, key: key, inst: id, i: i - 1 });
     }
     function periodicTickX(ti, key, snap, i) {
       var s = SPELLS[key], e = table[key], rk = xkey(ti, key);
@@ -704,12 +727,12 @@ window.WL = window.WL || {};
     function periodicTick(key, snap, i, isChannel) {
       var s = SPELLS[key], e = table[key];
       var amt = (s.tickBase + s.tickCoef * spNow(e)) * e.periodicMult * liveMult(key, true) * (snap.castMult || 1);
-      if (s.ramp) amt *= s.ramp[i];                                                                     // [A15]
+      if (s.ramp) amt *= s.ramp[Math.min(i, s.ramp.length - 1)];                                         // [A15]
       amt *= vulnMult(s.school);
       var crit = critRoll(key, e.critPct);                                                               // [A07]
       if (crit) amt *= e.critMult;
       deal(key, amt, crit, true);
-      if (logOn) L('tick', key, Object.assign({ dmg: Math.round(amt), crit: crit, n: i + 1, of: e.ticks }, vulnLog(amt)));
+      if (logOn) L('tick', key, Object.assign({ dmg: Math.round(amt), crit: crit, n: i + 1, of: !isChannel && SPELLS.wrack.dotSpells.indexOf(key) >= 0 ? undefined : e.ticks }, vulnLog(amt)));
       if (WL.NIGHTFALL_SPELLS.indexOf(key) >= 0 && tv('nightfall') && R.proc() * 100 < tv('nightfall', 'procPct')) { // [A21]
         S.buffs.shadowTrance = S.t + 10; L('proc', 'shadowTrance');
       }
@@ -870,7 +893,7 @@ window.WL = window.WL || {};
         touchOfTheGrave();                                                // on cast, not on the channel's ticks [A29]
         jowProc(false);                                                   // [A64]
         var id = ++inst;
-        S.channel = { key: key, inst: id, snap: makeSnap(), start: S.t, end: S.t + s.duration, tl: !!fromTL, idx: actIdx };   // timeline channels run to the end
+        setChannel({ key: key, inst: id, snap: makeSnap(), start: S.t, end: S.t + s.duration, tl: !!fromTL, idx: actIdx });   // timeline channels run to the end
         for (var i = 1; i <= e.ticks; i++) H.push({ t: S.t + i * s.tickEvery, o: 0, type: 'chanTick', key: key, inst: id, i: i - 1 });
         S.busyUntil = S.t + s.duration; S.gcdReady = S.t + gcdT;
         r.castTime += s.duration;
@@ -1170,7 +1193,10 @@ window.WL = window.WL || {};
       var end = Math.min(dur, tL + s.duration), gcd = S.gcd(), value = 0;
       var castMult = key === 'baneOfAgony' && tv('amplifyCurse') && (S.buff('amplifyCurse') || (!MANUAL_AMP && S.ready('amplifyCurse') && slotGate('amplifyCurse') !== 0)) ? 1 + tv('amplifyCurse', 'boaPct') / 100 : 1;
       var tickAmt = (s.tickBase + s.tickCoef * spNow(e)) * castMult * e.periodicMult * lmult(key, ti, true) * expVuln(s.school, ti) * expCrit(e.critPct, e.critMult);
-      if (f === 'wrack' && SPELLS.wrack.debuffSpells.indexOf(key) >= 0) tickAmt *= 1 + SPELLS.wrack.debuffPct / 100;   // ticks during the Wrack filler
+      // As before, the end-of-fight value estimates continuous filler after this cast's GCD/latency.
+      var fast = ti <= 1 && f === 'wrack' && SPELLS.wrack.dotSpells.indexOf(key) >= 0;
+      var normalTime = Math.max(0, occupies(key) + LAT - castT);
+      function tickTime(i) { var work = i * s.tickEvery; return tL + (fast && work > normalTime ? normalTime + (work - normalTime) / SPELLS.wrack.dotSpeed : work); }
       // Conflagrate (Destruction): a new Immolate lets the next Conflagrate happen, which then consumes it (unless
       // Shadow and Flame keeps it) — so ticks after that moment count only with the keep chance.
       var hit = hitChance(), tConf = Infinity, keep = 1;
@@ -1183,11 +1209,11 @@ window.WL = window.WL || {};
         } else tConf = Infinity;
       }
       var nTicks = 0, ticks = 0;
-      for (var i = 1; i <= e.ticks; i++) {
-        var tt = tL + i * s.tickEvery;
-        if (tt > dur + EPS) break;
+      for (var i = 1; i <= e.ticks * (fast ? SPELLS.wrack.dotSpeed : 1); i++) {
+        var tt = tickTime(i);
+        if (tt > end + EPS) break;
         nTicks++;
-        ticks += tickAmt * (s.ramp ? s.ramp[i - 1] : 1) * (tt > tConf + EPS ? keep : 1);
+        ticks += tickAmt * (s.ramp ? s.ramp[Math.min(i - 1, s.ramp.length - 1)] : 1) * (tt > tConf + EPS ? keep : 1);
       }
       value += hit * ticks;                                                // ticks need the DoT to land
       if (s.kind === 'hybrid') value += expCast(key, ti);                  // Immolate's direct hit (hit chance inside)
@@ -1199,13 +1225,13 @@ window.WL = window.WL || {};
       var sbKey = table.shadowBolt && (ROT.indexOf('shadowTrance') >= 0 || (f && isSB(f))) ? 'shadowBolt' : null;
       if (WL.NIGHTFALL_SPELLS.indexOf(key) >= 0 && tv('nightfall') && sbKey) {
         var procTicks = 0;
-        for (var j = 1; j <= nTicks; j++) if (tL + j * s.tickEvery <= dur - gcd + EPS) procTicks++;
+        for (var j = 1; j <= nTicks; j++) if (tickTime(j) <= dur - gcd + EPS) procTicks++;
         var sbNow = expCast(sbKey, 0), sbCast = table[sbKey].cast / S.hasteFactor();
         value += hit * procTicks * tv('nightfall', 'procPct') / 100 * Math.max(0, sbNow - gcd * (sbKey === f ? sbNow / Math.max(sbCast, gcd) : fRate));
       }
       if (f && SPELLS[f].drain && tv('soulSiphon') && ti <= 1 && WL.SOUL_SIPHON_EFFECTS.indexOf(key) >= 0) {   // Soul Siphon on the drain
         var others = 0, per = tv('soulSiphon', 'perEffectPct'), cap = tv('soulSiphon', 'maxPct');
-        WL.SOUL_SIPHON_EFFECTS.forEach(function (x) { if (x !== key && (x === 'curseOfElements' ? S.buff('coe') : S.dotLeft(x) > 0)) others++; });
+        WL.SOUL_SIPHON_EFFECTS.forEach(function (x) { if (x !== key && S.dotLeft(x) > 0) others++; });
         var now = 1 + Math.min((others + (S.dotLeft(key) > 0 ? 1 : 0)) * per, cap) / 100;
         var gain = (Math.min((others + 1) * per, cap) - Math.min(others * per, cap)) / 100;
         value += hit * up * fRate / now * gain;
@@ -1366,13 +1392,28 @@ window.WL = window.WL || {};
       } else if (ev.type === 'dotTick') {
         var d = S.dots[ev.key];
         if (!d || d.inst !== ev.inst) continue;               // refreshed or consumed [A14]
-        periodicTick(ev.key, d.snap, ev.i, false);
-        if (ev.i === d.ticks - 1) delete S.dots[ev.key];
+        if (ev.rev != null) {
+          if (ev.rev !== d.rev || S.t > d.expires + EPS) continue;
+          periodicTick(ev.key, d.snap, d.tick++, false);
+          d.nextTick = S.t + SPELLS[ev.key].tickEvery / d.rate; queueFastDot(ev.key, d);
+        } else {
+          periodicTick(ev.key, d.snap, ev.i, false);
+          if (ev.i === d.ticks - 1) delete S.dots[ev.key];
+        }
+      } else if (ev.type === 'dotExpire') {
+        var dots = ev.ti > 1 ? S.xdots[ev.ti] : S.dots;
+        if (dots[ev.key] && dots[ev.key].inst === ev.inst) delete dots[ev.key];
       } else if (ev.type === 'dotTickX') {                     // DoT tick on an extra target (multi-DoT)
         var dx = S.xdots[ev.ti][ev.key];
         if (!dx || dx.inst !== ev.inst) continue;
-        periodicTickX(ev.ti, ev.key, dx.snap, ev.i);
-        if (ev.i === dx.ticks - 1) delete S.xdots[ev.ti][ev.key];
+        if (ev.rev != null) {
+          if (ev.rev !== dx.rev || S.t > dx.expires + EPS) continue;
+          periodicTickX(ev.ti, ev.key, dx.snap, dx.tick++);
+          dx.nextTick = S.t + SPELLS[ev.key].tickEvery; queueFastDot(ev.key, dx, ev.ti);
+        } else {
+          periodicTickX(ev.ti, ev.key, dx.snap, ev.i);
+          if (ev.i === dx.ticks - 1) delete S.xdots[ev.ti][ev.key];
+        }
       } else if (ev.type === 'heal') {                              // the healing setting (round 119)
         var hb = S.health; gainHealth(HEAL.amt, 'healed'); L('heal', 'heal', { gain: Math.round(S.health - hb) });
       } else if (ev.type === 'sacTick') {                           // Voidwalker / Felhunter sacrifice (round 119)
@@ -1385,21 +1426,21 @@ window.WL = window.WL || {};
       } else if (ev.type === 'chanEnd') {                      // a channel shortened by pushback ends (round 78)
         var ch = S.channel;
         if (!ch || ch.inst !== ev.inst || ch.end > S.t + EPS) continue;
-        S.channel = null;
+        setChannel(null);
       } else if (ev.type === 'chanTick') {
         var c = S.channel;
         if (!c || c.inst !== ev.inst) continue;               // clipped
         if (ev.t > c.end + EPS) continue;                     // cut off by pushback (round 78); chanEnd closes the channel
         if (SPELLS[ev.key].aoe) aoeTick(ev.key, ev.i); else periodicTick(ev.key, c.snap, ev.i, true);
         var last = ev.i === table[ev.key].ticks - 1;
-        if (last) { S.channel = null; continue; }
+        if (last) { setChannel(null); continue; }
         if (SPELLS[ev.key].selfDamage && S.health <= selfTick(ev.key)) {   // the next Hellfire tick would kill you: stop channelling (round 119)
-          S.channel = null; res.clipped++; row(ev.key).castTime -= (c.end - S.t);
+          setChannel(null); res.clipped++; row(ev.key).castTime -= (c.end - S.t);
           S.busyUntil = S.t; L('clip', ev.key, { for: 'health' }); scheduleDecide(Math.max(S.t, S.gcdReady)); continue;
         }
         // A priority channel in a timeline gap ends when the next timeline entry is due (round 70).
         if (TL && TL.i < TL.list.length && TL.list[TL.i].t <= S.t + EPS && !c.tl) {
-          S.channel = null; res.clipped++; row(ev.key).castTime -= (c.end - S.t);
+          setChannel(null); res.clipped++; row(ev.key).castTime -= (c.end - S.t);
           S.busyUntil = S.t; L('clip', ev.key, { for: 'timeline' }); scheduleDecide(S.t); continue;
         }
         // Clip the channel when something higher in the priority list is ready (and the GCD allows it).
@@ -1407,7 +1448,7 @@ window.WL = window.WL || {};
           var idx = c.idx != null ? c.idx : ROT.indexOf(ev.key);   // the action that started it (round 106: an action's key need not be the spell's)
           var higher = pickAction(idx >= 0 ? idx : ROT.length);
           if (higher) {
-            S.channel = null; res.clipped++;
+            setChannel(null); res.clipped++;
             row(ev.key).castTime -= (c.end - S.t);
             S.busyUntil = S.t; L('clip', ev.key, { for: higher.key });
             scheduleDecide(S.t);

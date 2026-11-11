@@ -10,7 +10,7 @@
     var sb = t.shadowBolt;
     T.near(sb.cast, 3.0, 1e-9, 'SB cast 3.0 (no Bane points)');
     // Round 42: trainer ranks and Wowhead Effect Value − 1 (SPELLVALUES.md): SB R9 251 / 370 mana, Corruption R6 57,
-    // Wrack 86 (patch 2026-11-02), BoA 46, Incinerate 217, Immolate R7 146 / 52, Shadowburn 266.
+    // Wrack 60.2 (patch 2026-11-10), BoA 46, Incinerate 217, Immolate R7 146 / 52, Shadowburn 266.
     T.near(sb.cost, 370, 1e-9, 'SB cost 370 (R9)');
     T.near(sb.sp, 721, 1e-9, 'SB uses SP 700 + 21 Spellstone');
     T.near(sb.critPct, 21 + 5, 1e-9, 'SB crit = 21 (Ruthless 1, round 161) + Malevolence 5');
@@ -24,7 +24,7 @@
     // Corruption 10 = +20%; the Demonic Sacrifice aura (×1.15) multiplies.
     T.near(co.tickDmg, (57 + 0.2 * 721) * 1.15 * (1 + 0.10 + 0.10), 1e-9, 'Corruption tick = 201.2 × DS 1.15 × (1 + SM 10% + ImpCorr 10%)');
     var wr = t.wrack;
-    T.near(wr.tickDmg, (86 + 0.286 * 721) * 1.15 * 1.10, 1e-9, 'Wrack tick = (86 + 0.286×SP) × DS × SM; Improved Drains no longer applies');
+    T.near(wr.tickDmg, (60.2 + 0.2002 * 721) * 1.15 * 1.10, 1e-9, 'Wrack tick = (60.2 + 0.2002×SP) × DS × SM; Improved Drains does not apply');
     T.near(wr.critMult, 2.0, 1e-12, 'Wrack crit mult 2.0 (Pandemic)');
     T.near(t.baneOfAgony.tickDmg, (46 + 0.133 * 721) * 1.15 * (1 + 0.10 + 0.10), 1e-9, 'BoA avg tick = DS × (1 + SM 10% + Improved BoA 10%)');
     T.near(t.immolate.critMult, 1.5, 1e-12, 'Immolate crit mult 1.5');

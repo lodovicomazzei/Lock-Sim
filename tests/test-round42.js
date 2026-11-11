@@ -23,8 +23,8 @@
       T.eq(s[v[1]], v[2] - 1, v[0] + '.' + v[1] + ' = ' + (v[2] - 1) + ' (Value ' + v[2] + ' − 1)');
       if (v[3]) T.eq(s.id, v[3], v[0] + ' uses spell ' + v[3]);
     });
-    T.eq(WL.SPELLS.wrack.tickBase, 86, 'Wrack base damage per second at level 60 = 86 (Blizzard, 2026-11-02)');
-    T.eq(WL.SPELLS.wrack.tickCoef, 0.286, 'Wrack spell-power coefficient per second = 0.286 (Blizzard, 2026-11-02)');
+    T.eq(WL.SPELLS.wrack.tickBase, 60.2, 'Wrack level-60 base damage = 86 × 0.7 (Blizzard, 2026-11-10; tooltip rounds to 60)');
+    T.eq(WL.SPELLS.wrack.tickCoef, 0.2002, 'Wrack spell-power coefficient = 0.286 × 0.7 (2026-11-10)');
     T.eq(WL.DEFAULT_CONFIG.pets.imp.spell.base, 44, 'Firebolt 44 (Value 45 − 1)');
     T.eq(WL.DEFAULT_CONFIG.pets.succubus.spell.base, 50, 'Lash of Pain 50 (Value 51 − 1)');
     T.eq(WL.SPELLS.incinerate.immolateBonusPct, 25, 'Incinerate +25% vs Immolate (Value 26 − 1)');

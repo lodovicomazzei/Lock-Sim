@@ -3,8 +3,8 @@
     "commit":  "278f7a5",
     "subject":  "Round 183: the fourth headline number is the damage split (you / pet)",
     "uncommittedChanges":  true,
-    "localChanges": "Wrack November 2 tuning; explicit Amplify Curse APL support; direct build transfer to bundled 3D practice room",
-    "synced":  "2026-11-03",
+    "localChanges": "November 10 Wrack damage and DoT tick acceleration, Soul Siphon named effects; explicit Amplify Curse APL; direct build transfer",
+    "synced":  "2026-11-11",
     "files":  [
                   "data/consumables.js",
                   "data/config.js",
